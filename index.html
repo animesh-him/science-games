@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Science Experiments Game (Images Included)</title>
+<title>Science Experiments Game — Full Sets (5–8, 8–14, 14+)</title>
 <style>
   :root{
-    --bg:#f3f9ff; --card:#fff; --muted:#5f6b73; --accent:#186fae; --success:#17843a; --danger:#c83a3a;
+    --bg:#f4fbff; --card:#ffffff; --muted:#586672; --accent:#1b6fb0; --success:#15843a; --danger:#c73a3a;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#042233}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#052834}
   header{padding:18px;text-align:center}
   header h1{margin:0;font-size:20px}
   header p{margin:6px 0;color:var(--muted);font-size:13px}
   .wrap{max-width:980px;margin:12px auto;padding:12px}
   .tiles{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:12px 0}
-  .tile{padding:12px 16px;border-radius:12px;background:var(--card);box-shadow:0 8px 20px rgba(10,30,50,0.06);cursor:pointer;min-width:120px;text-align:center;font-weight:700;outline:none;touch-action:manipulation}
+  .tile{padding:12px 16px;border-radius:12px;background:var(--card);box-shadow:0 8px 18px rgba(8,20,30,0.06);cursor:pointer;min-width:120px;text-align:center;font-weight:700;outline:none;touch-action:manipulation}
   .tile small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:6px}
   .hub{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 22px rgba(8,20,40,0.06);margin-top:12px}
   .controls{display:flex;gap:8px;flex-wrap:wrap}
@@ -24,30 +24,32 @@
   .status{margin-top:10px;font-size:14px}
   .card{background:#fff;padding:12px;border-radius:10px;margin-top:12px;box-shadow:0 8px 18px rgba(8,20,40,0.04)}
   .diagram{display:flex;justify-content:center;margin-bottom:10px}
-  .diagram svg{max-width:100%;height:auto;width:280px}
+  .diagram svg{max-width:100%;height:auto;width:300px}
   .question{font-size:18px;font-weight:700;margin-bottom:10px}
-  .options{display:flex;flex-direction:column;gap:8px}
-  .opt-btn{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left}
-  .opt-btn img,.opt-btn svg{max-height:64px;max-width:120px;border-radius:6px}
+  .options{display:flex;flex-direction:column;gap:10px}
+  .opt-btn{display:flex;gap:12px;align-items:center;padding:10px;border-radius:8px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left}
+  .opt-btn .thumb{width:96px;flex:0 0 96px}
+  .opt-btn svg{max-width:96px;height:auto;display:block}
   .opt-label{flex:1}
   .feedback{margin-top:10px;min-height:28px;font-weight:700}
   .correct{color:var(--success)}
   .wrong{color:var(--danger)}
   .hint{color:#5b4400;background:#fff8e0;padding:8px;border-radius:8px;margin-top:8px}
   .controls-bottom{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .pager{display:flex;justify-content:center;gap:8px;margin-top:12px}
   .footer{padding:12px;text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
   @media (max-width:720px){
     .tile{min-width:100px;padding:10px}
-    header h1{font-size:18px}
+    .diagram svg{width:220px}
+    .opt-btn .thumb{width:80px}
     .question{font-size:16px}
-    .opt-btn img,.opt-btn svg{max-height:56px;max-width:100px}
   }
 </style>
 </head>
 <body>
 <header>
   <h1>Science Experiments Game</h1>
-  <p>Images included – one experiment at a time. Play or Training mode. Printable certificate.</p>
+  <p>One experiment at a time — Play or Training mode. 20 questions per age group. Images included for clarity.</p>
 </header>
 
 <div class="wrap">
@@ -56,20 +58,20 @@
     <div class="small" style="text-align:center;margin-bottom:8px">Choose an age group</div>
     <div class="tiles" aria-label="Age groups">
       <div class="tile" data-age="5-8" tabindex="0" onclick="selectAge('5-8', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('5-8',this)}">
-        Age 5–8 <small>Beginner</small>
+        Age 5–8 <small>Beginner — picture + text options</small>
       </div>
       <div class="tile" data-age="8-14" tabindex="0" onclick="selectAge('8-14', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('8-14',this)}">
-        Age 8–14 <small>Curious</small>
+        Age 8–14 <small>Illustrated options</small>
       </div>
       <div class="tile" data-age="14+" tabindex="0" onclick="selectAge('14+', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('14+',this)}">
-        Age 14+ <small>Advanced</small>
+        Age 14+ <small>Advanced concepts</small>
       </div>
     </div>
   </div>
 
   <!-- Hub -->
   <div id="stage-hub" class="hub" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <div>
         <h2 id="hub-title" style="margin:0">Age</h2>
         <div id="progress-display" class="small">Solved 0 / 0</div>
@@ -113,169 +115,434 @@
         <button onclick="backToAge()">Back to Age selection</button>
       </div>
     </div>
+
+    <div class="pager" id="progress-pager" style="margin-top:10px">
+      <div class="small" id="progress-pos">Question 0 / 0</div>
+    </div>
   </div>
 </div>
 
 <div class="footer">Created &amp; Designed by Animesh</div>
 
 <script>
-/* =========================
-   Inline SVG helpers
-   ========================= */
+/* -----------------------------------------------------------------------
+   SVG helpers — return small inline SVG strings for reuse across options.
+   Keep drawings simple and lightweight so page stays fast.
+   ----------------------------------------------------------------------- */
 
-function svgPipeDiagram(){
-  // Two pipes: left blocked, right open (simple)
+function svgLeftRightBucket(leftBlocked){
+  // small bucket & two pipes: show left blocked if leftBlocked true
+  var block = leftBlocked ? '<rect x="96" y="42" width="18" height="30" rx="4" fill="#c44" transform="rotate(-8 105 57)"/>' : '';
   return `
-    <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two pipes, right open">
-      <rect width="320" height="140" rx="12" fill="#e8f7ff"/>
-      <!-- left path -->
-      <path d="M20 40 H120 V70 H200" stroke="#3a6a9a" stroke-width="18" stroke-linecap="round" fill="none"/>
-      <!-- right path -->
-      <path d="M20 100 H200" stroke="#3a9a6a" stroke-width="18" stroke-linecap="round" fill="none" />
-      <!-- blockage on left -->
-      <rect x="110" y="54" width="22" height="32" rx="4" fill="#c44" transform="rotate(-8 121 70)" />
-      <!-- bucket -->
-      <rect x="220" y="48" width="72" height="60" rx="6" fill="#fff" stroke="#6c8fae" stroke-width="2"/>
-      <rect x="224" y="52" width="64" height="48" rx="4" fill="#e6f7ff"/>
-      <text x="256" y="90" text-anchor="middle" fill="#3a6a9a" font-size="12">Bucket</text>
+    <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+      <rect width="200" height="100" rx="6" fill="#fff"/>
+      <path d="M10 30 H90 V60 H150" stroke="#2f6f99" stroke-width="12" stroke-linecap="round" fill="none"/>
+      <path d="M10 70 H150" stroke="#2f9a66" stroke-width="12" stroke-linecap="round" fill="none"/>
+      ${block}
+      <rect x="156" y="44" width="32" height="40" rx="4" fill="#e6f7ff" stroke="#6a9ab5"/>
     </svg>`;
 }
 
-function svgCircuitDiagram(){
-  // Simple: two circuits, one complete, one open
-  return `
-    <svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two simple circuits, upper closed, lower open">
-      <rect width="340" height="140" rx="12" fill="#fff"/>
-      <!-- battery top (closed) -->
-      <line x1="20" y1="30" x2="120" y2="30" stroke="#333" stroke-width="4"/>
-      <rect x="60" y="18" width="14" height="24" fill="#222"/>
-      <rect x="80" y="18" width="6" height="24" fill="#222"/>
-      <circle cx="140" cy="30" r="8" fill="#ffc93b" stroke="#b36700" stroke-width="2"/>
-      <text x="170" y="34" font-size="12" fill="#333">Bulb (lights)</text>
+function svgBucketOptionLeft(){ return svgLeftRightBucket(true); }
+function svgBucketOptionRight(){ return svgLeftRightBucket(false); }
 
-      <!-- battery bottom (open) -->
-      <line x1="20" y1="90" x2="120" y2="90" stroke="#333" stroke-width="4"/>
-      <rect x="60" y="78" width="14" height="24" fill="#222"/>
-      <rect x="80" y="78" width="6" height="24" fill="#222"/>
-      <line x1="140" y1="90" x2="200" y2="90" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/>
-      <text x="220" y="94" font-size="12" fill="#333">Bulb (off)</text>
+function svgCircuitClosed(){ return `
+  <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="160" height="100" rx="6" fill="#fff"/>
+    <line x1="10" y1="50" x2="60" y2="50" stroke="#222" stroke-width="4"/>
+    <rect x="66" y="40" width="12" height="20" fill="#222"/>
+    <circle cx="100" cy="50" r="10" fill="#ffd54a" stroke="#b36b00" stroke-width="2"/>
+    <line x1="110" y1="50" x2="150" y2="50" stroke="#222" stroke-width="4"/>
+  </svg>`; }
+function svgCircuitOpen(){ return `
+  <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="160" height="100" rx="6" fill="#fff"/>
+    <line x1="10" y1="50" x2="60" y2="50" stroke="#222" stroke-width="4"/>
+    <rect x="66" y="40" width="12" height="20" fill="#222"/>
+    <circle cx="100" cy="50" r="10" fill="#eee" stroke="#b36b00" stroke-width="2"/>
+    <line x1="110" y1="50" x2="150" y2="50" stroke="#222" stroke-width="4" stroke-dasharray="6,6"/>
+  </svg>`; }
 
-      <text x="60" y="14" font-size="12" fill="#333">Complete circuit</text>
-      <text x="60" y="104" font-size="12" fill="#333">Open circuit</text>
-    </svg>`;
-}
+function svgShadowDemo(){ return `
+  <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="100" rx="6" fill="#fff"/>
+    <circle cx="40" cy="36" r="18" fill="#6abfef"/>
+    <rect x="90" y="18" width="30" height="36" fill="#6abfef"/>
+    <ellipse cx="190" cy="70" rx="28" ry="8" fill="#d9eaf8"/>
+    <text x="40" y="94" font-size="10" text-anchor="middle" fill="#333">Small shadow</text>
+    <text x="120" y="94" font-size="10" text-anchor="middle" fill="#333">Medium</text>
+    <text x="196" y="94" font-size="10" text-anchor="middle" fill="#333">Leaf shadow</text>
+  </svg>`; }
 
-function svgBucketOptionLeft(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="left bucket path">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <path d="M10 20 H100 V50 H150" stroke="#3a6a9a" stroke-width="12" stroke-linecap="round" fill="none"/>
-      <rect x="124" y="54" width="28" height="32" rx="4" fill="#e6f7ff" stroke="#6c8fae"/>
-      <rect x="110" y="44" width="22" height="10" fill="#c44" transform="rotate(-8 121 49)"/>
-      <text x="82" y="92" font-size="11" fill="#333" text-anchor="middle">Left path</text>
-    </svg>`;
-}
-function svgBucketOptionRight(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="right bucket path">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <path d="M10 70 H150" stroke="#3a9a6a" stroke-width="12" stroke-linecap="round" fill="none"/>
-      <rect x="124" y="34" width="28" height="40" rx="4" fill="#e6f7ff" stroke="#6c8fae"/>
-      <text x="82" y="92" font-size="11" fill="#333" text-anchor="middle">Right path</text>
-    </svg>`;
-}
+function svgMixColorRedBlue(){ return `
+  <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="90" rx="6" fill="#fff"/>
+    <circle cx="50" cy="45" r="20" fill="#e53935"/>
+    <circle cx="100" cy="45" r="20" fill="#5e35b1"/>
+    <rect x="140" y="25" width="30" height="40" rx="6" fill="#7e57c2"/>
+  </svg>`; }
 
-function svgCircuitOptionClosed(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="closed circuit">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <line x1="10" y1="50" x2="60" y2="50" stroke="#333" stroke-width="4"/>
-      <rect x="66" y="40" width="12" height="20" fill="#222"/>
-      <circle cx="100" cy="50" r="10" fill="#ffc93b" stroke="#b36700" stroke-width="2"/>
-      <line x1="110" y1="50" x2="150" y2="50" stroke="#333" stroke-width="4"/>
-      <text x="80" y="90" font-size="11" text-anchor="middle">Closed (bulb lights)</text>
-    </svg>`;
-}
-function svgCircuitOptionOpen(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="open circuit">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <line x1="10" y1="50" x2="60" y2="50" stroke="#333" stroke-width="4"/>
-      <rect x="66" y="40" width="12" height="20" fill="#222"/>
-      <circle cx="100" cy="50" r="10" fill="#eee" stroke="#b36700" stroke-width="2"/>
-      <line x1="110" y1="50" x2="150" y2="50" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/>
-      <text x="80" y="90" font-size="11" text-anchor="middle">Open (bulb off)</text>
-    </svg>`;
-}
+function svgPlantNeed(){ return `
+  <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="90" rx="6" fill="#fff"/>
+    <rect x="30" y="30" width="20" height="30" fill="#8d6e63"/>
+    <rect x="50" y="30" width="20" height="30" fill="#8d6e63"/>
+    <path d="M30 30 Q50 10 70 30" fill="#66bb6a"/>
+    <circle cx="150" cy="20" r="16" fill="#ffd54a"/>
+  </svg>`; }
 
-/* =========================
-   Experiment data (with images)
-   - options can be simple text or objects { text, imgSVG }
-   - experiment can include a main image via `imageSVG`
-   ========================= */
+function svgMagnetClip(){ return `
+  <svg viewBox="0 0 180 90" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="90" rx="6" fill="#fff"/>
+    <rect x="30" y="20" width="60" height="40" rx="10" fill="#ef5350"/>
+    <path d="M110 70 l20 -30 l30 30" stroke="#333" stroke-width="4" fill="none"/>
+    <text x="70" y="86" font-size="10" text-anchor="middle">Magnet</text>
+  </svg>`; }
+
+/* -----------------------------------------------------------------------
+   Experiment sets: 20 each (5-8, 8-14, 14+)
+   For 5-8: every option is { text, imgSVG } to show both picture & label.
+   For others: options may be strings or objects with imgSVG+text where helpful.
+   ----------------------------------------------------------------------- */
 
 const EXPERIMENTS = {
   "5-8": [
-    // bucket & pipe experiment with main diagram + options with images
-    {
-      prompt: "Which pipe will fill the bucket?",
-      imageSVG: svgPipeDiagram(),
-      options: [
-        { text: "Left path", imgSVG: svgBucketOptionLeft() },
-        { text: "Right path", imgSVG: svgBucketOptionRight() }
-      ],
-      answer: 1,
-      hint: "Check where the blockage (red block) is and which path is open to the bucket.",
-      explanation: "The right path is open to the bucket; the left path has a blockage.",
-      voice: "Which pipe will fill the bucket, left or right?"
-    },
+    { prompt:"Which pipe will fill the bucket?", imageSVG: svgLeftRightBucket(false), options:[
+        { text:"Left path", imgSVG: svgBucketOptionLeft() },
+        { text:"Right path", imgSVG: svgBucketOptionRight() }
+      ], answer:1, hint:"Find the open route to the bucket (no red block).", explanation:"Right path is open and reaches the bucket." , voice:"Which pipe will fill the bucket, left or right?" },
 
-    // floating object experiment - no image necessary, options text
-    {
-      prompt: "Which object will float on water?",
-      options: ["Rock", "Piece of wood", "Coin"],
-      answer: 1,
-      hint: "Think which material is lighter.",
-      explanation: "Wood floats because it's less dense than water.",
-      voice: "Which object will float on water?"
-    },
+    { prompt:"Which object will float on water?", options:[
+        { text:"Rock", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" rx="6" fill="#fff"/><ellipse cx="60" cy="46" rx="26" ry="12" fill="#6f6f6f"/></svg>`},
+        { text:"Piece of wood", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" rx="6" fill="#fff"/><rect x="34" y="36" width="52" height="12" rx="4" fill="#dba15b"/></svg>`},
+        { text:"Coin", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" rx="6" fill="#fff"/><circle cx="60" cy="44" r="10" fill="#ffd54a"/></svg>`}
+      ], answer:1, hint:"Which is light and floats?", explanation:"Wood floats because it's less dense than water.", voice:"Which object floats on water?" },
 
-    // circuit example for 8-14 maybe, but include simple circuit here also as illustration
-    {
-      prompt: "Which circuit will light the bulb?",
-      imageSVG: svgCircuitDiagram(),
-      options: [
-        { text: "Complete circuit (top)", imgSVG: svgCircuitOptionClosed() },
-        { text: "Open circuit (bottom)", imgSVG: svgCircuitOptionOpen() }
-      ],
-      answer: 0,
-      hint: "Look for a complete path from the battery through the bulb and back.",
-      explanation: "A closed circuit allows current to flow and the bulb lights.",
-      voice: "Which circuit will light the bulb?"
-    },
+    { prompt:"Which melts faster: ice in sun or shade?", options:[
+        { text:"Sun", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><circle cx="60" cy="28" r="14" fill="#ffd54a"/></svg>`},
+        { text:"Shade", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="20" y="20" width="80" height="40" fill="#cfd8dc"/></svg>`}
+      ], answer:0, hint:"Where is it warmer?", explanation:"Ice melts faster in the sun due to higher temperature.", voice:"Which melts faster, ice in sun or in shade?" },
 
-    // additional experiments without images (text-only) to reach sample count
-    { prompt: "Which melts faster: ice in the sun or in the shade?", options: ["Sun", "Shade"], answer: 0, hint: "Where is it warmer?", explanation: "Ice melts faster in the sun.", voice: "Which melts faster, ice in the sun or in the shade?" },
-    { prompt: "What color do you get when you mix red and blue?", options: ["Purple", "Green", "Orange"], answer: 0, hint: "Red + Blue", explanation: "Red and blue make purple.", voice: "What color do you get when mixing red and blue?" }
-    // add more as needed...
+    { prompt:"Which makes a bigger shadow?", options:[
+        { text:"Tall tree", imgSVG: svgShadowDemo() },
+        { text:"Small plant", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M30 60 Q50 20 70 60" fill="#66bb6a"/></svg>`},
+        { text:"Feather", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M40 20 Q60 40 40 60" fill="#cfd8dc"/></svg>`}
+      ], answer:0, hint:"Larger objects block more light", explanation:"A tall tree blocks more light so its shadow is larger.", voice:"Which makes a bigger shadow?" },
+
+    { prompt:"What color do you get when you mix red and blue?", options:[
+        { text:"Purple", imgSVG: svgMixColorRedBlue() },
+        { text:"Green", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="40" y="30" width="40" height="20" fill="#66bb6a"/></svg>`},
+        { text:"Orange", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><circle cx="60" cy="40" r="14" fill="#ff8a65"/></svg>`}
+      ], answer:0, hint:"Red plus blue", explanation:"Red combined with blue produces purple.", voice:"What color results from mixing red and blue?" },
+
+    { prompt:"Which animal lives in water?", options:[
+        { text:"Fish", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M20 40 Q40 20 70 40 Q40 60 20 40" fill="#42a5f5"/></svg>`},
+        { text:"Dog", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><circle cx="60" cy="40" r="14" fill="#8d6e63"/></svg>`},
+        { text:"Bird", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M30 40 Q50 20 70 40 Q50 60 30 40" fill="#ffcc80"/></svg>`}
+      ], answer:0, hint:"Which breathes underwater?", explanation:"Fish live in water and use gills.", voice:"Which animal lives in water?" },
+
+    { prompt:"Which sticks to a magnet?", options:[
+        { text:"Paper clip", imgSVG: svgMagnetClip() },
+        { text:"Balloon", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><ellipse cx="60" cy="35" rx="18" ry="24" fill="#ff8a80"/></svg>`},
+        { text:"Cork", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="46" y="34" width="28" height="12" fill="#d7ccc8"/></svg>`}
+      ], answer:0, hint:"Which is metal?", explanation:"A paper clip is metal and magnetic.", voice:"Which will stick to a magnet?" },
+
+    { prompt:"Which does a plant need to grow?", options:[
+        { text:"Sunlight", imgSVG: svgPlantNeed() },
+        { text:"Candy", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="48" y="30" width="24" height="20" fill="#ffcc80"/></svg>`},
+        { text:"Video games", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="36" y="28" width="48" height="28" rx="4" fill="#b3e5fc"/></svg>`}
+      ], answer:0, hint:"Plants get energy from the sun", explanation:"Plants need sunlight, water and soil to grow.", voice:"Which does a plant need to grow?" },
+
+    { prompt:"Which is a push action?", options:[
+        { text:"Opening a door by pulling", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="40" y="24" width="8" height="32" fill="#bdbdbd"/></svg>`},
+        { text:"Kicking a ball", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><circle cx="80" cy="48" r="12" fill="#ffb74d"/></svg>`},
+        { text:"Picking up a cup", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="52" y="30" width="16" height="24" fill="#90caf9"/></svg>`}
+      ], answer:1, hint:"Pushing moves away from you", explanation:"Kicking a ball is a push.", voice:"Which is a push action?" },
+
+    { prompt:"Which will float: sealed plastic bottle or heavy metal spoon?", options:[
+        { text:"Plastic bottle", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="42" y="26" width="36" height="28" rx="8" fill="#b2ebf2"/></svg>`},
+        { text:"Metal spoon", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M60 24 q18 20 0 40" fill="#b0bec5"/></svg>`},
+        { text:"Both", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><text x="60" y="46" font-size="12" text-anchor="middle">Both?</text></svg>`}
+      ], answer:0, hint:"Trapped air helps float", explanation:"A sealed plastic bottle traps air and floats.", voice:"Which will float, the bottle or the spoon?" },
+
+    { prompt:"Which material is used for shadow puppet?", options:[
+        { text:"Paper", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="36" y="28" width="48" height="24" fill="#ffe082"/></svg>`},
+        { text:"Glass", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="36" y="28" width="48" height="24" fill="#b3e5fc" opacity="0.6"/></svg>`},
+        { text:"Water", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><ellipse cx="60" cy="44" rx="40" ry="10" fill="#81d4fa"/></svg>`}
+      ], answer:0, hint:"Blocks light and is easy to shape", explanation:"Paper blocks light and is used for puppets.", voice:"Which material is used to make a shadow puppet?" },
+
+    { prompt:"Which object is magnetic?", options:[
+        { text:"Wooden spoon", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="36" y="32" width="48" height="12" fill="#8d6e63"/></svg>`},
+        { text:"Iron key", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M40 50 h30 a6 6 0 0 0 0 -12 h-30 z" fill="#9e9e9e"/></svg>`},
+        { text:"Plastic toy", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><circle cx="60" cy="40" r="16" fill="#f48fb1"/></svg>`}
+      ], answer:1, hint:"Metal objects like iron", explanation:"Iron key is magnetic.", voice:"Which object is magnetic?" },
+
+    { prompt:"Which will sink in water?", options:[
+        { text:"Stone", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><ellipse cx="60" cy="48" rx="22" ry="12" fill="#757575"/></svg>`},
+        { text:"Cork", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="48" y="36" width="24" height="12" fill="#d7ccc8"/></svg>`},
+        { text:"Soap", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="44" y="34" width="32" height="14" fill="#ffe082"/></svg>`}
+      ], answer:0, hint:"Denser/heavier objects sink", explanation:"Stone sinks because it is denser than water.", voice:"Which will sink in water?" },
+
+    { prompt:"What does a thermometer measure?", options:[
+        { text:"Temperature", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="56" y="26" width="8" height="32" fill="#f44336"/></svg>`},
+        { text:"Speed", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><path d="M30 60 h60" stroke="#333" stroke-width="6"/></svg>`},
+        { text:"Color", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="30" y="30" width="60" height="20" fill="#81d4fa"/></svg>`}
+      ], answer:0, hint:"Used to check fever", explanation:"Thermometers measure temperature.", voice:"What does a thermometer measure?" },
+
+    { prompt:"Which helps boat float more?", options:[
+        { text:"More weight", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="44" y="36" width="32" height="12" fill="#bdbdbd"/></svg>`},
+        { text:"Larger surface area", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><rect x="20" y="46" width="80" height="10" fill="#90caf9"/></svg>`},
+        { text:"Softer material", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80" fill="#fff"/><ellipse cx="60" cy="48" rx="36" ry="12" fill="#cfd8dc"/></svg>`}
+      ], answer:1, hint:"Spreading weight helps buoyancy", explanation:"A larger surface area helps spread weight, aiding floatation.", voice:"Which helps a boat float more?" },
+
+    { prompt:"Which object will roll easily?", options:[
+        { text:"Ball", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><circle cx="60" cy="44" r="16" fill="#ffb74d"/></svg>`},
+        { text:"Block", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><rect x="44" y="34" width="32" height="24" fill="#90a4ae"/></svg>`},
+        { text:"Sheet of paper", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><rect x="36" y="30" width="48" height="20" fill="#ffe082"/></svg>`}
+      ], answer:0, hint:"Round shapes roll", explanation:"A ball is round and rolls easily.", voice:"Which object will roll easily?" },
+
+    { prompt:"Which season do leaves fall?", options:[
+        { text:"Autumn", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><path d="M40 40 q20 -20 40 0" fill="#ffcc80"/></svg>`},
+        { text:"Summer", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><circle cx="60" cy="30" r="10" fill="#ffd54a"/></svg>`},
+        { text:"Spring", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><path d="M30 50 q20 -30 40 0" fill="#a5d6a7"/></svg>`}
+      ], answer:0, hint:"Which season prepares trees for winter?", explanation:"Leaves fall during autumn.", voice:"Which season do leaves usually fall?" },
+
+    { prompt:"Which light source is hottest?", options:[
+        { text:"Sun", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><circle cx="60" cy="30" r="18" fill="#ffd54a"/></svg>`},
+        { text:"Candle", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><rect x="56" y="34" width="8" height="20" fill="#ffab91"/></svg>`},
+        { text:"Lamp", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><rect x="50" y="30" width="20" height="30" fill="#c5cae9"/></svg>`}
+      ], answer:0, hint:"Which is extremely hot?", explanation:"The Sun is far hotter than a candle or lamp.", voice:"Which light source is hottest?" },
+
+    { prompt:"Which fills with air when you blow into it?", options:[
+        { text:"Balloon", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><ellipse cx="60" cy="36" rx="18" ry="26" fill="#ff8a80"/></svg>`},
+        { text:"Stone", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><ellipse cx="60" cy="46" rx="20" ry="10" fill="#9e9e9e"/></svg>`},
+        { text:"Cup", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><rect x="44" y="30" width="32" height="24" fill="#b3e5fc"/></svg>`}
+      ], answer:0, hint:"Which one inflates?", explanation:"A balloon inflates when you blow into it.", voice:"Which will fill with air when you blow into it?" },
+
+    // 20 questions reached for 5-8
+    { prompt:"Which helps shade a plant: umbrella or sunlight?", options:[
+      { text:"Umbrella", imgSVG:`<svg viewBox="0 0 120 80"><rect width="120" height="80"/><path d="M60 20 q30 10 60 0" fill="#90caf9"/></svg>`},
+      { text:"Sunlight", imgSVG: `<svg viewBox="0 0 120 80"><rect width="120" height="80"/><circle cx="60" cy="24" r="14" fill="#ffd54a"/></svg>`}
+    ], answer:1, hint:"Plants need sunlight", explanation:"Sunlight helps plants grow; umbrella shades them.", voice:"Which helps plants grow?" }
   ],
+
   "8-14": [
-    // include circuit experiment here too (no main image necessary)
-    { prompt: "Which simple circuit will light the bulb?", options: ["Battery + wire + bulb (complete loop)", "Battery + bulb (no wire)", "Wire + bulb (no battery)"], answer: 0, hint: "Need power source and closed loop", explanation: "A complete loop with a battery allows current to flow.", voice: "Which simple circuit will light the bulb?" },
-    { prompt: "Which soil drains fastest: sand or clay?", options: ["Sand", "Clay", "Loam"], answer: 0, hint: "Large particles let water pass", explanation: "Sand drains faster because of larger grains.", voice: "Which soil drains fastest?" },
-    { prompt: "Which produces static electricity?", options: ["Rubbing a balloon on hair", "Putting balloon in water", "Freezing balloon"], answer: 0, hint: "Friction can move electrons", explanation: "Rubbing transfers charge and creates static.", voice: "Which action produces static electricity?" }
-    // ... add more
+    { prompt:"Which simple circuit lights the bulb?", imageSVG: svgCircuitClosed(), options:[
+        { text:"Closed circuit", imgSVG: svgCircuitClosed() },
+        { text:"Open circuit", imgSVG: svgCircuitOpen() }
+      ], answer:0, hint:"A closed loop lets current flow", explanation:"A closed circuit allows current to light the bulb.", voice:"Which circuit lights the bulb?" },
+
+    { prompt:"Which material transmits sound fastest?", options:[
+        "Air",
+        "Water",
+        "Steel"
+      ], answer:2, hint:"Sound travels fastest in solids", explanation:"Sound travels fastest in steel compared to air or water.", voice:"Which material transmits sound fastest?" },
+
+    { prompt:"Which soil drains water fastest?", options:[
+        "Sand",
+        "Clay",
+        "Loam"
+      ], answer:0, hint:"Large particle size drains quicker", explanation:"Sand drains faster due to larger particle spaces.", voice:"Which soil drains water fastest?" },
+
+    { prompt:"Which produces static electricity?", options:[
+        "Rubbing balloon on hair",
+        "Putting balloon in water",
+        "Freezing balloon"
+      ], answer:0, hint:"Friction moves electrons", explanation:"Rubbing moves charge and creates static electricity.", voice:"Which produces static electricity?" },
+
+    { prompt:"Why does a metal spoon get hot in hot soup?", options:[
+        "Conduction",
+        "Convection",
+        "Radiation"
+      ], answer:0, hint:"Heat travels through contact in solids", explanation:"The spoon heats by conduction along the metal.", voice:"Why does a metal spoon get hot in hot soup?" },
+
+    { prompt:"Which is an example of chemical change?", options:[
+      "Paper burning",
+      "Ice melting",
+      "Salt dissolving"
+    ], answer:0, hint:"Look for new substances forming", explanation:"Burning produces new substances like ash and gases.", voice:"Which is an example of chemical change?" },
+
+    { prompt:"What does pH measure?", options:[
+      "Acidity or basicity",
+      "Temperature",
+      "Density"
+    ], answer:0, hint:"Used to test acids/bases", explanation:"pH measures how acidic or basic a solution is.", voice:"What does pH measure?" },
+
+    { prompt:"Which device measures electrical current?", options:[
+      "Ammeter",
+      "Thermometer",
+      "Barometer"
+    ], answer:0, hint:"Think of amps", explanation:"An ammeter measures current in amperes.", voice:"Which device measures electrical current?" },
+
+    { prompt:"Which best explains why oil floats on water?", options:[
+      "Oil is less dense than water",
+      "Oil is more dense",
+      "They mix evenly"
+    ], answer:0, hint:"Which liquid floats on the other?", explanation:"Oil floats on water because it is less dense.", voice:"Why does oil float on water?" },
+
+    { prompt:"Which instrument measures atmospheric pressure?", options:[
+      "Barometer",
+      "Hygrometer",
+      "Anemometer"
+    ], answer:0, hint:"Used in weather forecasting", explanation:"A barometer measures air pressure.", voice:"Which instrument measures atmospheric pressure?" },
+
+    { prompt:"Which shows potential energy converting to kinetic energy?", options:[
+      "Ball at top rolling down",
+      "Ball at rest",
+      "Ball held up"
+    ], answer:0, hint:"Energy as it moves", explanation:"A ball rolling down converts potential to kinetic energy.", voice:"Which shows potential energy converting to kinetic energy?" },
+
+    { prompt:"Which liquid evaporates faster at room temperature?", options:[
+      "Water",
+      "Honey",
+      "Cooking oil"
+    ], answer:0, hint:"Less viscous liquids evaporate faster", explanation:"Water evaporates faster than viscous liquids like honey.", voice:"Which liquid evaporates fastest?" },
+
+    { prompt:"Which lens makes distant objects appear smaller?", options:[
+      "Convex",
+      "Concave",
+      "Plano"
+    ], answer:1, hint:"Diverging lens makes images smaller", explanation:"A concave lens diverges light and makes images smaller.", voice:"Which lens makes distant objects appear smaller?" },
+
+    { prompt:"Which is a lever that makes lifting easier?", options:[
+      "Long stick under rock (fulcrum near rock)",
+      "Short stick under rock",
+      "No stick"
+    ], answer:0, hint:"Longer lever arm reduces force", explanation:"A longer lever reduces the effort to lift.", voice:"Which lever makes lifting easier?" },
+
+    { prompt:"Which shape has the least air resistance when falling?", options:[
+      "Flat sheet",
+      "Streamlined object",
+      "Parachute"
+    ], answer:1, hint:"Designed to reduce drag", explanation:"Streamlined shapes have lower air resistance.", voice:"Which shape has least air resistance?" },
+
+    { prompt:"Which best describes diffusion?", options:[
+      "Movement from high to low concentration",
+      "Energy creation",
+      "Magnet movement"
+    ], answer:0, hint:"Think of smell spreading in a room", explanation:"Diffusion is movement from high to low concentration.", voice:"What is diffusion?" },
+
+    { prompt:"Which is an indicator of acidity?", options:[
+      "Litmus paper turns red",
+      "Litmus paper turns blue",
+      "No change"
+    ], answer:0, hint:"Red indicates acid on litmus", explanation:"Acid turns blue litmus red.", voice:"How does litmus indicate acidity?" },
+
+    { prompt:"Which part of the plant does photosynthesis happen in?", options:[
+      "Leaves",
+      "Roots",
+      "Stem"
+    ], answer:0, hint:"Where are chloroplasts?", explanation:"Photosynthesis mainly occurs in leaves.", voice:"Where does photosynthesis happen?" }
   ],
+
   "14+": [
-    { prompt: "Which phenomenon bends light at an interface?", options: ["Refraction", "Reflection", "Diffraction"], answer: 0, hint: "Light changes direction in a new medium", explanation: "Refraction is bending when light passes between media.", voice: "Which phenomenon bends light at an interface?" },
-    { prompt: "Which gas contributes to acid rain?", options: ["Sulfur dioxide", "Nitrogen gas", "Oxygen"], answer: 0, hint: "Emitted by burning fossil fuels", explanation: "SO2 forms acids in the atmosphere.", voice: "Which gas contributes to acid rain?" }
-    // ... add more
+    { prompt:"Which phenomenon bends light at an interface?", options:[
+      { text:"Refraction", imgSVG: `<svg viewBox="0 0 160 90"><rect width="160" height="90" rx="6" fill="#fff"/><line x1="10" y1="50" x2="60" y2="50" stroke="#222" stroke-width="4"/><line x1="60" y1="50" x2="150" y2="30" stroke="#1976d2" stroke-width="4"/></svg>` },
+      { text:"Reflection", imgSVG: `<svg viewBox="0 0 160 90"><rect width="160" height="90" rx="6" fill="#fff"/><line x1="10" y1="30" x2="90" y2="30" stroke="#222" stroke-width="4"/><line x1="90" y1="30" x2="150" y2="30" stroke="#90a4ae" stroke-width="4" stroke-dasharray="6,6"/></svg>` },
+      { text:"Diffraction", imgSVG: `<svg viewBox="0 0 160 90"><rect width="160" height="90"/><line x1="10" y1="45" x2="70" y2="45" stroke="#222" stroke-width="4"/><path d="M70 45 q20 -20 40 0" stroke="#1976d2" stroke-width="4" fill="none"/></svg>` }
+    ], answer:0, hint:"Light changes direction entering a new medium", explanation:"Refraction is bending of light at an interface.", voice:"Which phenomenon bends light at an interface?" },
+
+    { prompt:"Which gas contributes to acid rain?", options:[
+      "Sulfur dioxide (SO2)",
+      "Nitrogen gas (N2)",
+      "Oxygen (O2)"
+    ], answer:0, hint:"Produced from burning fossil fuels", explanation:"Sulfur dioxide forms sulfuric acid in the atmosphere causing acid rain.", voice:"Which gas contributes to acid rain?" },
+
+    { prompt:"Which formula represents conservation of mechanical energy?", options:[
+      "KE_initial + PE_initial = KE_final + PE_final",
+      "F = ma",
+      "P = F/A"
+    ], answer:0, hint:"Kinetic + potential", explanation:"Mechanical energy (KE + PE) is conserved without non-conservative forces.", voice:"Which equation shows conservation of mechanical energy?" },
+
+    { prompt:"Which unit measures electric charge?", options:[
+      "Coulomb (C)",
+      "Watt (W)",
+      "Newton (N)"
+    ], answer:0, hint:"Symbol is C", explanation:"Charge is measured in coulombs.", voice:"Which unit measures electric charge?" },
+
+    { prompt:"Which best describes an exothermic reaction?", options:[
+      "Releases heat",
+      "Absorbs heat",
+      "No temperature change"
+    ], answer:0, hint:"Surroundings get warmer", explanation:"Exothermic reactions release heat to surroundings.", voice:"Which describes exothermic reaction?" },
+
+    { prompt:"Which biomolecule stores genetic information?", options:[
+      "DNA",
+      "Carbohydrate",
+      "Lipid"
+    ], answer:0, hint:"Found in nucleus", explanation:"DNA stores hereditary information.", voice:"Which biomolecule stores genetic information?" },
+
+    { prompt:"Which method separates a soluble solid from liquid?", options:[
+      "Evaporation",
+      "Filtration",
+      "Magnetic separation"
+    ], answer:0, hint:"Remove liquid to leave solid", explanation:"Evaporation removes liquid, leaving the dissolved solid.", voice:"Which method separates soluble solid from liquid?" },
+
+    { prompt:"Why do metals conduct electricity?", options:[
+      "Free electrons move through the lattice",
+      "Ionic bonds break",
+      "They contain water"
+    ], answer:0, hint:"Free charges carry current", explanation:"Metals have delocalized electrons that conduct electricity.", voice:"Why do metals conduct electricity?" },
+
+    { prompt:"Which describes nuclear fusion?", options:[
+      "Combining light nuclei to form heavier ones",
+      "Splitting heavy nuclei",
+      "Chemical bonding"
+    ], answer:0, hint:"This powers stars", explanation:"Fusion combines light nuclei releasing large energy.", voice:"Which describes nuclear fusion?" },
+
+    { prompt:"Which law states F = ma?", options:[
+      "Newton's Second Law",
+      "Law of Conservation of Energy",
+      "Ohm's Law"
+    ], answer:0, hint:"Force equals mass times acceleration", explanation:"Newton's second law is F = ma.", voice:"Which law is F equals ma?" },
+
+    { prompt:"Which process forms sedimentary rock?", options:[
+      "Compaction and cementation of sediments",
+      "Melting and cooling",
+      "Metamorphism"
+    ], answer:0, hint:"Layers accumulate over time", explanation:"Sediments compact and cement to form sedimentary rocks.", voice:"Which forms sedimentary rock?" },
+
+    { prompt:"Which property doesn't change during a physical change?", options:[
+      "Chemical composition",
+      "Shape",
+      "Phase"
+    ], answer:0, hint:"Identity remains the same", explanation:"Chemical composition remains unchanged in a physical change.", voice:"Which property doesn't change in physical change?" },
+
+    { prompt:"Which process regulates blood glucose?", options:[
+      "Insulin and glucagon",
+      "Photosynthesis",
+      "Respiration only"
+    ], answer:0, hint:"Hormones from pancreas", explanation:"Insulin and glucagon regulate blood glucose.", voice:"Which regulates blood glucose?" },
+
+    { prompt:"Which instrument measures humidity?", options:[
+      "Hygrometer",
+      "Barometer",
+      "Thermometer"
+    ], answer:0, hint:"Measures moisture in air", explanation:"A hygrometer measures humidity (water vapor).", voice:"Which instrument measures humidity?" },
+
+    { prompt:"Which term describes species interactions where both benefit?", options:[
+      "Mutualism",
+      "Parasitism",
+      "Competition"
+    ], answer:0, hint:"Both organisms benefit", explanation:"Mutualism benefits both partners.", voice:"Which describes both organisms benefiting?" },
+
+    { prompt:"Which is the SI base unit for temperature?", options:[
+      "Kelvin (K)",
+      "Celsius (°C)",
+      "Fahrenheit (°F)"
+    ], answer:0, hint:"Used in scientific equations", explanation:"Kelvin is the SI base unit for temperature.", voice:"Which is the SI unit for temperature?" },
+
+    { prompt:"Which best explains greenhouse effect?", options:[
+      "Atmosphere traps heat from the Sun",
+      "Sun gets closer to Earth",
+      "More clouds always cool Earth"
+    ], answer:0, hint:"Gases trap infrared radiation", explanation:"Greenhouse gases trap outgoing heat, warming the planet.", voice:"Which explains the greenhouse effect?" }
   ]
 };
 
-/* ============================
-   App logic — one experiment at a time
-   ============================ */
+/* -----------------------------------------------------------------------
+   App logic — one experiment at a time, with image support
+   ----------------------------------------------------------------------- */
 
 const storagePrefix = 'scigame_v1_';
 let currentAge = null;
@@ -286,13 +553,12 @@ let currentExperiment = null;
 
 function $(id){ return document.getElementById(id); }
 
-/* Safe speak */
 function speak(text){
   if(!('speechSynthesis' in window)) return;
-  try{ window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; window.speechSynthesis.speak(u); } catch(e){}
+  try{ window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang='en-US'; window.speechSynthesis.speak(u); } catch(e){}
 }
 
-/* Select age (inline handler) */
+/* Select age */
 function selectAge(age, el){
   currentAge = age;
   currentIndex = 0;
@@ -303,7 +569,6 @@ function selectAge(age, el){
   updateProgressUI();
   setMode('play');
   showExperiment();
-  // mark pressed
   var tiles = document.querySelectorAll('.tile');
   for(var i=0;i<tiles.length;i++) tiles[i].setAttribute('aria-pressed','false');
   if(el) el.setAttribute('aria-pressed','true');
@@ -330,7 +595,7 @@ function saveProgress(){
   updateProgressUI();
 }
 
-/* UI updates */
+/* Update UI */
 function updateProgressUI(){
   if(!currentAge) return;
   var total = (EXPERIMENTS[currentAge] || []).length;
@@ -338,9 +603,10 @@ function updateProgressUI(){
   $('progress-display').textContent = 'Solved ' + solvedCount + ' / ' + total;
   $('pts').textContent = progress.points || 0;
   $('stars').textContent = progress.stars || 0;
+  $('progress-pos').textContent = 'Question ' + (currentIndex+1) + ' / ' + total;
 }
 
-/* Mode */
+/* Set mode */
 function setMode(m){
   currentMode = (m === 'train') ? 'train' : 'play';
   $('btn-play').style.fontWeight = currentMode === 'play' ? '800' : '400';
@@ -348,70 +614,55 @@ function setMode(m){
   if(currentAge) showExperiment();
 }
 
-/* Render diagram and options for current experiment */
+/* Render experiment */
 function showExperiment(){
   var list = EXPERIMENTS[currentAge] || [];
   if(currentIndex >= list.length){
     $('experiment-card').style.display = 'none';
     $('finished-card').style.display = 'block';
+    updateProgressUI();
     return;
   }
   $('finished-card').style.display = 'none';
   $('experiment-card').style.display = 'block';
-
   currentExperiment = list[currentIndex];
 
-  // render main image if present
-  var di = $('diagram-wrapper');
-  di.innerHTML = '';
+  // diagram
+  var di = $('diagram-wrapper'); di.innerHTML = '';
   if(currentExperiment.imageSVG){
-    // insert SVG string as HTML
     di.innerHTML = currentExperiment.imageSVG;
-    di.setAttribute('aria-hidden', 'false');
+    di.setAttribute('aria-hidden','false');
   } else {
-    di.setAttribute('aria-hidden', 'true');
+    di.setAttribute('aria-hidden','true');
   }
 
   $('question-text').textContent = '(' + (currentIndex+1) + ') ' + currentExperiment.prompt;
 
-  // options (each option can be string or object)
   var box = $('options-box'); box.innerHTML = '';
   var opts = currentExperiment.options || [];
   for(var i=0;i<opts.length;i++){
     (function(i){
       var opt = opts[i];
-      var btn = document.createElement('button');
-      btn.className = 'opt-btn';
-      // structure: optional image area + label
-      var content = document.createElement('div'); content.style.display='flex'; content.style.alignItems='center'; content.style.gap='12px';
-      // option image if provided
+      var btn = document.createElement('button'); btn.className='opt-btn';
+      var thumb = document.createElement('div'); thumb.className='thumb';
+      var label = document.createElement('div'); label.className='opt-label';
+      // if option is object with imgSVG
       if(typeof opt === 'object' && opt.imgSVG){
-        // create wrapper for SVG
-        var wrap = document.createElement('div');
-        wrap.innerHTML = opt.imgSVG;
-        // make sure SVG scales; limit size via CSS
-        content.appendChild(wrap);
-      } else if(typeof opt === 'string'){
-        // nothing
-      } else if(typeof opt === 'object' && opt.img){
-        // legacy: raw img string
-        var wrap2 = document.createElement('div');
-        wrap2.innerHTML = opt.img;
-        content.appendChild(wrap2);
+        thumb.innerHTML = opt.imgSVG;
+        label.textContent = opt.text || '';
+      } else if(typeof opt === 'object' && opt.text && opt.img){
+        thumb.innerHTML = opt.img;
+        label.textContent = opt.text;
+      } else { // string option
+        label.textContent = opt;
       }
-
-      var label = document.createElement('div');
-      label.className = 'opt-label';
-      label.textContent = (typeof opt === 'string') ? opt : (opt.text || '');
-      content.appendChild(label);
-
-      btn.appendChild(content);
+      if(thumb.innerHTML) btn.appendChild(thumb);
+      btn.appendChild(label);
       btn.onclick = function(){ handleChoice(i); };
-      // training mode style
-      if(currentMode === 'train' && typeof opt === 'object' && i === currentExperiment.answer){
-        btn.style.border = '2px solid #9fd';
-      } else if(currentMode === 'train' && typeof opt === 'string' && i === currentExperiment.answer){
-        btn.style.border = '2px solid #9fd';
+      if(currentMode === 'train'){
+        // highlight correct
+        var correctIndex = currentExperiment.answer;
+        if(i === correctIndex) btn.style.border = '2px solid #9fd';
       }
       box.appendChild(btn);
     })(i);
@@ -419,17 +670,13 @@ function showExperiment(){
 
   $('feedback').innerHTML = '';
   $('next-btn').style.display = 'none';
-
-  // voice
+  updateProgressUI();
   speak(currentExperiment.voice || currentExperiment.prompt);
 }
 
-/* User choice handling */
+/* Handle choice */
 function handleChoice(i){
-  if(currentMode === 'train'){
-    showTrainingAnswer();
-    return;
-  }
+  if(currentMode === 'train'){ showTrainingAnswer(); return; }
   var fb = $('feedback');
   currentExperiment.tries = (currentExperiment.tries || 0) + 1;
   if(i === currentExperiment.answer){
@@ -437,13 +684,14 @@ function handleChoice(i){
     speak('Correct! Well done.');
     awardPoints();
     $('next-btn').style.display = 'inline-block';
+    updateProgressUI();
   } else {
     fb.innerHTML = '<div class="wrong">❌ Wrong. Try again.</div>';
     speak('Wrong. Try again.');
   }
 }
 
-/* Training answer */
+/* Training explain */
 function showTrainingAnswer(){
   var fb = $('feedback');
   var opt = currentExperiment.options[currentExperiment.answer];
@@ -453,7 +701,7 @@ function showTrainingAnswer(){
   $('next-btn').style.display = 'inline-block';
 }
 
-/* Award points */
+/* Award points once */
 function awardPoints(){
   var key = 'exp_' + currentIndex;
   if(progress.solved && progress.solved[key]) return;
@@ -464,7 +712,7 @@ function awardPoints(){
   saveProgress();
 }
 
-/* Next */
+/* Next experiment */
 function nextExperiment(){
   currentIndex++;
   showExperiment();
@@ -473,9 +721,8 @@ function nextExperiment(){
 /* Hint & repeat */
 function showHint(){
   if(!currentExperiment) return;
-  $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint) + '</div>';
-  speak('Hint: ' + currentExperiment.hint);
-  currentExperiment.usedHint = true;
+  $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint || '') + '</div>';
+  speak('Hint: ' + (currentExperiment.hint || ''));
 }
 function repeatVoice(){
   if(!currentExperiment) return;
@@ -522,15 +769,14 @@ function openPrintableCertificate(){
   w.document.close();
 }
 
-/* Simple escape */
+/* Escape helper */
 function escapeHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* Initialize (no heavy startup) */
+/* Init */
 document.addEventListener('DOMContentLoaded', function(){
-  // app waits for user to select an age
-  // nothing to do here
+  // app waits for user to choose an age
 });
 </script>
 </body>
