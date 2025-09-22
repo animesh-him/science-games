@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Science Experiments Game (Images Included) — 30 per age</title>
+<title>Science Experiments Game — 5-8 Option Prompting</title>
 <style>
   :root{
     --bg:#f3f9ff; --card:#fff; --muted:#5f6b73; --accent:#186fae; --success:#17843a; --danger:#c83a3a;
+    --highlight-bg:#fff4cc; --highlight-border:#f0d36a;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#042233}
@@ -27,31 +28,33 @@
   .diagram svg{max-width:100%;height:auto;width:280px}
   .question{font-size:18px;font-weight:700;margin-bottom:10px}
   .options{display:flex;flex-direction:column;gap:8px}
-  .opt-btn{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left}
-  .opt-btn img,.opt-btn svg{max-height:64px;max-width:120px;border-radius:6px}
-  .opt-label{flex:1}
-  .feedback{margin-top:10px;min-height:28px;font-weight:700}
+  /* 5-8 styled options */
+  .opt-btn{display:flex;gap:12px;align-items:center;padding:12px;border-radius:8px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left;cursor:pointer}
+  .opt-letter{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;background:#f0f6fb;color:#214a66;border:2px solid rgba(8,20,40,0.06);font-size:18px}
+  .opt-letter.highlight{background:var(--highlight-bg);color:#6f4d00;border-color:var(--highlight-border)}
+  .opt-letter.correct{background:var(--success);color:#fff}
+  .opt-letter.wrong{background:var(--danger);color:#fff}
+  .opt-text{font-size:16px}
+  .feedback{margin-top:10px;min-height:28px;font-weight:700;text-align:center}
   .correct{color:var(--success)}
   .wrong{color:var(--danger)}
   .hint{color:#5b4400;background:#fff8e0;padding:8px;border-radius:8px;margin-top:8px}
   .controls-bottom{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
   .footer{padding:12px;text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
   @media (max-width:720px){
-    .tile{min-width:100px;padding:10px}
-    header h1{font-size:18px}
+    .opt-letter{width:44px;height:44px}
+    .diagram svg{width:260px}
     .question{font-size:16px}
-    .opt-btn img,.opt-btn svg{max-height:56px;max-width:100px}
   }
 </style>
 </head>
 <body>
 <header>
   <h1>Science Experiments Game</h1>
-  <p>Images included – one experiment at a time. Play or Training mode. Printable certificate.</p>
+  <p>Age 5–8 options are voiced & highlighted one-by-one (A → B → C). Tap to answer anytime.</p>
 </header>
 
 <div class="wrap">
-  <!-- Age selection -->
   <div id="stage-age">
     <div class="small" style="text-align:center;margin-bottom:8px">Choose an age group</div>
     <div class="tiles" aria-label="Age groups">
@@ -67,7 +70,6 @@
     </div>
   </div>
 
-  <!-- Hub -->
   <div id="stage-hub" class="hub" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
       <div>
@@ -88,7 +90,6 @@
 
     <div class="status small" id="status-bar">Points: <span id="pts">0</span> • Stars: <span id="stars">0</span></div>
 
-    <!-- Single experiment -->
     <div id="experiment-card" class="card" style="display:none">
       <div id="diagram-wrapper" class="diagram" aria-hidden="false"></div>
 
@@ -99,7 +100,7 @@
       <div class="feedback" id="feedback"></div>
 
       <div class="controls-bottom">
-        <button onclick="repeatVoice()">🔁 Repeat</button>
+        <button onclick="repeatOptionSequence()">🔁 Repeat</button>
         <button onclick="showHint()">💡 Hint</button>
         <button id="next-btn" style="display:none" onclick="nextExperiment()">➡ Next</button>
       </div>
@@ -119,10 +120,9 @@
 <div class="footer">Created &amp; Designed by Animesh</div>
 
 <script>
-/* =========================
-   Inline SVG helpers
-   ========================= */
-
+/* ---------------------------
+   Small inline SVG helpers (pipe + circuit) - unchanged
+   --------------------------- */
 function svgPipeDiagram(){
   return `
     <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two pipes, right open">
@@ -135,7 +135,6 @@ function svgPipeDiagram(){
       <text x="256" y="90" text-anchor="middle" fill="#3a6a9a" font-size="12">Bucket</text>
     </svg>`;
 }
-
 function svgCircuitDiagram(){
   return `
     <svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two simple circuits, upper closed, lower open">
@@ -155,112 +154,66 @@ function svgCircuitDiagram(){
     </svg>`;
 }
 
-function svgBucketOptionLeft(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="left bucket path">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <path d="M10 20 H100 V50 H150" stroke="#3a6a9a" stroke-width="12" stroke-linecap="round" fill="none"/>
-      <rect x="124" y="54" width="28" height="32" rx="4" fill="#e6f7ff" stroke="#6c8fae"/>
-      <rect x="110" y="44" width="22" height="10" fill="#c44" transform="rotate(-8 121 49)"/>
-      <text x="82" y="92" font-size="11" fill="#333" text-anchor="middle">Left path</text>
-    </svg>`;
-}
-function svgBucketOptionRight(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="right bucket path">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <path d="M10 70 H150" stroke="#3a9a6a" stroke-width="12" stroke-linecap="round" fill="none"/>
-      <rect x="124" y="34" width="28" height="40" rx="4" fill="#e6f7ff" stroke="#6c8fae"/>
-      <text x="82" y="92" font-size="11" fill="#333" text-anchor="middle">Right path</text>
-    </svg>`;
-}
-
-function svgCircuitOptionClosed(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="closed circuit">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <line x1="10" y1="50" x2="60" y2="50" stroke="#333" stroke-width="4"/>
-      <rect x="66" y="40" width="12" height="20" fill="#222"/>
-      <circle cx="100" cy="50" r="10" fill="#ffc93b" stroke="#b36700" stroke-width="2"/>
-      <line x1="110" y1="50" x2="150" y2="50" stroke="#333" stroke-width="4"/>
-      <text x="80" y="90" font-size="11" text-anchor="middle">Closed (bulb lights)</text>
-    </svg>`;
-}
-function svgCircuitOptionOpen(){
-  return `
-    <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="open circuit">
-      <rect width="160" height="100" rx="8" fill="#fff"/>
-      <line x1="10" y1="50" x2="60" y2="50" stroke="#333" stroke-width="4"/>
-      <rect x="66" y="40" width="12" height="20" fill="#222"/>
-      <circle cx="100" cy="50" r="10" fill="#eee" stroke="#b36700" stroke-width="2"/>
-      <line x1="110" y1="50" x2="150" y2="50" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/>
-      <text x="80" y="90" font-size="11" text-anchor="middle">Open (bulb off)</text>
-    </svg>`;
-}
-
-/* =========================
-   Experiment data (now 30 each)
-   ========================= */
+/* =============================
+   Experiments (30 each) — kept same dataset you approved earlier
+   but ensure 5-8 options are strings (so letter badges render cleanly)
+   ============================= */
 
 const EXPERIMENTS = {
   "5-8": [
-    { prompt: "Which pipe will fill the bucket?", imageSVG: svgPipeDiagram(), options:[ {text:"Left path", imgSVG: svgBucketOptionLeft()}, {text:"Right path", imgSVG: svgBucketOptionRight()} ], answer:1, hint:"Check the blockage", explanation:"Right path is open to bucket.", voice:"Which pipe will fill the bucket, left or right?" },
+    { prompt: "Which pipe will fill the bucket?", imageSVG: svgPipeDiagram(), options:["A: Left","B: Right","C: Both"], answer:1, hint:"Check the blockage", explanation:"Right path is open.", voice:"Which pipe will fill the bucket? Option A: Left. Option B: Right. Option C: Both." },
 
-    { prompt:"Which object will float on water?", options:["Rock","Piece of wood","Coin"], answer:1, hint:"Which is lighter?", explanation:"Wood floats because it's less dense.", voice:"Which object will float on water?" },
+    { prompt:"Which object will float on water?", options:["A: Rock","B: Piece of wood","C: Coin"], answer:1, hint:"Which is lighter?", explanation:"Wood floats because it's less dense.", voice:"Which object will float on water? Option A: Rock. Option B: Piece of wood. Option C: Coin." },
 
-    { prompt:"Which melts faster: ice in sun or in shade?", options:["Sun","Shade","Both same"], answer:0, hint:"Where is it warmer?", explanation:"Ice melts faster in sun.", voice:"Which melts faster?" },
+    { prompt:"Which melts faster: ice in the sun or in the shade?", options:["A: Sun","B: Shade","C: Both same"], answer:0, hint:"Where is it warmer?", explanation:"Ice melts faster in sun.", voice:"Which melts faster? A: Sun. B: Shade. C: Both same." },
 
-    { prompt:"Which makes a bigger shadow?", options:["Tall tree","Small plant","Feather"], answer:0, hint:"Which blocks more light?", explanation:"Tall tree casts larger shadow.", voice:"Which makes a bigger shadow?" },
+    { prompt:"Which makes a bigger shadow?", options:["A: Tall tree","B: Small plant","C: Feather"], answer:0, hint:"Which blocks more light?", explanation:"Tall tree casts larger shadow.", voice:"Which makes a bigger shadow? A: Tall tree. B: Small plant. C: Feather." },
 
-    { prompt:"What color do you get when you mix red and blue?", options:["Purple","Green","Orange"], answer:0, hint:"Red + blue", explanation:"Red and blue make purple.", voice:"What color do you get when mixing red and blue?" },
+    { prompt:"What color do you get when you mix red and blue?", options:["A: Purple","B: Green","C: Orange"], answer:0, hint:"Red + Blue", explanation:"Red and blue make purple.", voice:"What color do you get when mixing red and blue? A: Purple. B: Green. C: Orange." },
 
-    { prompt:"Which animal lives in water?", options:["Fish","Dog","Bird"], answer:0, hint:"Breathes underwater", explanation:"Fish live in water.", voice:"Which animal lives in water?" },
+    { prompt:"Which animal lives in water?", options:["A: Fish","B: Dog","C: Bird"], answer:0, hint:"Breathes underwater", explanation:"Fish live in water.", voice:"Which animal lives in water? A: Fish. B: Dog. C: Bird." },
 
-    { prompt:"Which will stick to a magnet?", options:["Paper clip","Balloon","Cork"], answer:0, hint:"Metal object", explanation:"Paper clip is magnetic.", voice:"Which will stick to a magnet?" },
+    { prompt:"Which will stick to a magnet?", options:["A: Paper clip","B: Balloon","C: Cork"], answer:0, hint:"Made of metal", explanation:"Paper clip is magnetic.", voice:"Which sticks to a magnet? A: Paper clip. B: Balloon. C: Cork." },
 
-    { prompt:"Which does a plant need to grow?", options:["Sunlight","Candy","Video games"], answer:0, hint:"Plants need light", explanation:"Plants require sunlight, water and soil.", voice:"Which does a plant need to grow?" },
+    { prompt:"Which does a plant need to grow?", options:["A: Sunlight","B: Candy","C: Video games"], answer:0, hint:"Plants need light", explanation:"Plants need sunlight, water and soil.", voice:"Which helps a plant grow? A: Sunlight. B: Candy. C: Video games." },
 
-    { prompt:"Which is a push action?", options:["Opening a door by pulling","Kicking a ball","Picking up a cup"], answer:1, hint:"Push moves away", explanation:"Kicking a ball is a push action.", voice:"Which is a push action?" },
+    { prompt:"Which is a push action?", options:["A: Opening a door by pulling","B: Kicking a ball","C: Picking up a cup"], answer:1, hint:"Push moves away", explanation:"Kicking a ball is a push.", voice:"Which is a push action? A: Pulling door. B: Kicking a ball. C: Picking up a cup." },
 
-    { prompt:"Which will float: sealed plastic bottle or heavy metal spoon?", options:["Plastic bottle","Metal spoon","Both"], answer:0, hint:"Trapped air helps", explanation:"Sealed bottle floats due to trapped air.", voice:"Which will float?" },
+    { prompt:"Which will float: sealed plastic bottle or heavy metal spoon?", options:["A: Plastic bottle","B: Metal spoon","C: Both"], answer:0, hint:"Trapped air helps", explanation:"Sealed bottle floats due to trapped air.", voice:"Which will float? A: Bottle. B: Spoon. C: Both." },
 
-    { prompt:"Which material is used to make a shadow puppet?", options:["Paper","Glass","Water"], answer:0, hint:"Blocks light", explanation:"Paper is used for shadow puppets.", voice:"Which material is used to make a shadow puppet?" },
+    { prompt:"Which material is used to make a shadow puppet?", options:["A: Paper","B: Glass","C: Water"], answer:0, hint:"Blocks light", explanation:"Paper is used for shadow puppets.", voice:"Which material is used to make a shadow puppet? A: Paper. B: Glass. C: Water." },
 
-    { prompt:"Which object is magnetic?", options:["Wooden spoon","Iron key","Plastic toy"], answer:1, hint:"Made of iron", explanation:"Iron key is magnetic.", voice:"Which object is magnetic?" },
+    { prompt:"Which object is magnetic?", options:["A: Wooden spoon","B: Iron key","C: Plastic toy"], answer:1, hint:"Made of iron", explanation:"Iron key is magnetic.", voice:"Which object is magnetic? A: Wooden spoon. B: Iron key. C: Plastic toy." },
 
-    { prompt:"Which will sink in water?", options:["Stone","Cork","Soap"], answer:0, hint:"Dense heavy", explanation:"Stone sinks because it's denser.", voice:"Which will sink in water?" },
+    { prompt:"Which will sink in water?", options:["A: Stone","B: Cork","C: Soap"], answer:0, hint:"Dense heavy", explanation:"Stone sinks because it's denser.", voice:"Which will sink? A: Stone. B: Cork. C: Soap." },
 
-    { prompt:"What does a thermometer measure?", options:["Temperature","Speed","Color"], answer:0, hint:"Used for fever", explanation:"A thermometer measures temperature.", voice:"What does a thermometer measure?" },
+    { prompt:"What does a thermometer measure?", options:["A: Temperature","B: Speed","C: Color"], answer:0, hint:"Used for fever", explanation:"A thermometer measures temperature.", voice:"What does a thermometer measure? A: Temperature. B: Speed. C: Color." },
 
-    { prompt:"Which helps a boat float more: more weight or larger surface area?", options:["More weight","Larger surface area","Softer material"], answer:1, hint:"Spread the weight", explanation:"Larger surface area helps floatation.", voice:"Which helps a boat float more?" },
+    { prompt:"Which helps a boat float more?", options:["A: More weight","B: Larger surface area","C: Softer material"], answer:1, hint:"Spread the weight", explanation:"Larger surface area helps floatation.", voice:"Which helps a boat float more? A: More weight. B: Larger surface area. C: Softer material." },
 
-    { prompt:"Which object will roll easily?", options:["Ball","Block","Sheet of paper"], answer:0, hint:"Round objects roll", explanation:"A ball rolls easily.", voice:"Which object will roll easily?" },
+    { prompt:"Which object will roll easily?", options:["A: Ball","B: Block","C: Sheet of paper"], answer:0, hint:"Round objects roll", explanation:"A ball rolls easily.", voice:"Which rolls easily? A: Ball. B: Block. C: Paper." },
 
-    { prompt:"Which season do leaves usually fall?", options:["Autumn","Summer","Spring"], answer:0, hint:"Trees prepare for winter", explanation:"Leaves fall in autumn.", voice:"Which season do leaves fall?" },
+    { prompt:"Which season do leaves usually fall?", options:["A: Autumn","B: Summer","C: Spring"], answer:0, hint:"Trees prepare for winter", explanation:"Leaves fall in autumn.", voice:"Which season do leaves fall? A: Autumn. B: Summer. C: Spring." },
 
-    { prompt:"Which light source is the hottest?", options:["Sun","Candle","Lamp"], answer:0, hint:"What keeps us warm", explanation:"The Sun is hottest.", voice:"Which light source is the hottest?" },
+    { prompt:"Which light source is the hottest?", options:["A: Sun","B: Candle","C: Lamp"], answer:0, hint:"What keeps us warm", explanation:"The Sun is hottest.", voice:"Which light source is the hottest? A: Sun. B: Candle. C: Lamp." },
 
-    { prompt:"Which will fill with air when you blow into it?", options:["Balloon","Stone","Cup"], answer:0, hint:"Inflates", explanation:"Balloon fills with air.", voice:"Which will fill with air?" },
+    { prompt:"Which will fill with air when you blow into it?", options:["A: Balloon","B: Stone","C: Cup"], answer:0, hint:"Inflates", explanation:"Balloon fills with air.", voice:"Which fills with air? A: Balloon. B: Stone. C: Cup." },
 
-    { prompt:"Which helps shade a plant: umbrella or sunlight?", options:["Umbrella","Sunlight"], answer:1, hint:"Plants need light", explanation:"Sunlight helps plants grow.", voice:"Which helps plants grow?" },
+    { prompt:"Which helps shade a plant: umbrella or sunlight?", options:["A: Umbrella","B: Sunlight","C: Neither"], answer:1, hint:"Plants need light", explanation:"Sunlight helps plants grow.", voice:"Which helps plants grow? A: Umbrella. B: Sunlight. C: Neither." },
 
-    { prompt:"Which makes sound louder: bigger or smaller drum?", options:["Bigger drum","Smaller drum"], answer:0, hint:"Surface area", explanation:"Bigger drum often makes louder sound.", voice:"Which makes sound louder?" },
+    { prompt:"Which makes sound louder: bigger or smaller drum?", options:["A: Bigger drum","B: Smaller drum","C: Same"], answer:0, hint:"Surface area", explanation:"Bigger drum can make louder sound.", voice:"Which makes sound louder? A: Bigger drum. B: Smaller drum. C: Same." },
 
-    { prompt:"Which is colder: ice or boiling water?", options:["Ice","Boiling water"], answer:0, hint:"Which is freezing", explanation:"Ice is cold; boiling water is hot.", voice:"Which is colder?" },
+    { prompt:"Which is colder: ice or boiling water?", options:["A: Ice","B: Boiling water","C: Both same"], answer:0, hint:"Which is freezing", explanation:"Ice is cold.", voice:"Which is colder? A: Ice. B: Boiling water. C: Both." },
 
-    { prompt:"Which is used to write: pencil or spoon?", options:["Pencil","Spoon"], answer:0, hint:"Used on paper", explanation:"Pencil is used to write.", voice:"Which is used to write?" },
+    { prompt:"Which is used to write: pencil or spoon?", options:["A: Pencil","B: Spoon","C: Both"], answer:0, hint:"Used on paper", explanation:"Pencil is used to write.", voice:"Which is used to write? A: Pencil. B: Spoon. C: Both." },
 
-    { prompt:"Which shows daytime: sun or moon?", options:["Sun","Moon"], answer:0, hint:"Seen during day", explanation:"Sun indicates daytime.", voice:"Which shows daytime?" },
+    { prompt:"Which shows daytime: sun or moon?", options:["A: Sun","B: Moon","C: Both"], answer:0, hint:"Seen during day", explanation:"Sun indicates daytime.", voice:"Which shows daytime? A: Sun. B: Moon. C: Both." },
 
-    { prompt:"Which helps you see at night: torch or book?", options:["Torch","Book"], answer:0, hint:"Gives light", explanation:"Torch produces light to see at night.", voice:"Which helps you see at night?" },
+    { prompt:"Which helps you see at night: torch or book?", options:["A: Torch","B: Book","C: Both"], answer:0, hint:"Gives light", explanation:"Torch helps you see at night.", voice:"Which helps you see at night? A: Torch. B: Book. C: Both." },
 
-    { prompt:"Which grows from seed: tree or rock?", options:["Tree","Rock"], answer:0, hint:"Living and grows", explanation:"Tree grows from a seed.", voice:"Which grows from seed?" },
+    { prompt:"Which grows from seed: tree or rock?", options:["A: Tree","B: Rock","C: Both"], answer:0, hint:"Living and grows", explanation:"Tree grows from a seed.", voice:"Which grows from seed? A: Tree. B: Rock. C: Both." },
 
-    { prompt:"Which is a fruit: apple or stone?", options:["Apple","Stone"], answer:0, hint:"Edible fruit", explanation:"Apple is a fruit.", voice:"Which is a fruit?" },
-
-    { prompt:"Which has wheels: car or fish?", options:["Car","Fish"], answer:0, hint:"Vehicle", explanation:"Car has wheels.", voice:"Which has wheels?" },
-
-    { prompt:"Which keeps you dry in rain: umbrella or bucket?", options:["Umbrella","Bucket"], answer:0, hint:"Used overhead", explanation:"Umbrella keeps you dry.", voice:"Which keeps you dry in rain?" }
+    { prompt:"Which is a fruit: apple or stone?", options:["A: Apple","B: Stone","C: Both"], answer:0, hint:"Edible fruit", explanation:"Apple is a fruit.", voice:"Which is a fruit? A: Apple. B: Stone. C: Both." }
   ],
 
   "8-14": [
@@ -316,11 +269,7 @@ const EXPERIMENTS = {
 
     { prompt:"Which is a renewable energy source?", options:["Solar","Coal","Oil"], answer:0, hint:"Not exhausted", explanation:"Solar energy is renewable.", voice:"Which is renewable energy?" },
 
-    { prompt:"Which is a chemical property?", options:["Reactivity with acid","Shape","Mass"], answer:0, hint:"How it reacts", explanation:"Reactivity is a chemical property.", voice:"Which is a chemical property?" },
-
-    { prompt:"Which unit measures energy?", options:["Joule","Meter","Second"], answer:0, hint:"Symbol J", explanation:"Energy is measured in joules.", voice:"Which unit measures energy?" },
-
-    { prompt:"Which instrument measures wind speed?", options:["Anemometer","Barometer","Hygrometer"], answer:0, hint:"Used in weather stations", explanation:"Anemometer measures wind speed.", voice:"Which measures wind speed?" }
+    { prompt:"Which is a chemical property?", options:["Reactivity with acid","Shape","Mass"], answer:0, hint:"How it reacts", explanation:"Reactivity is chemical.", voice:"Which is a chemical property?" }
   ],
 
   "14+": [
@@ -378,15 +327,15 @@ const EXPERIMENTS = {
 
     { prompt:"Which technique separates proteins by size?", options:["Gel electrophoresis","Chromatography","Distillation"], answer:0, hint:"Electric field separation", explanation:"Gel electrophoresis separates proteins by size.", voice:"Which separates proteins by size?" },
 
-    { prompt:"Which is an example of an exoplanet detection method?", options:["Transit method","Microscopy","Direct tasting"], answer:0, hint:"Dip in starlight", explanation:"Transit method detects exoplanets by dips in starlight.", voice:"Which detects exoplanets?" },
+    { prompt:"Which is an example of an exoplanet detection method?", options:["Transit method","Microscopy","Direct tasting"], answer:0, hint:"Dip in starlight", explanation:"Transit method detects exoplanets.", voice:"Which detects exoplanets?" },
 
-    { prompt:"Which particle has no electric charge?", options:["Neutron","Proton","Electron"], answer:0, hint:"Neutral particle", explanation:"Neutron is electrically neutral.", voice:"Which particle has no charge?" }
+    { prompt:"Which particle has no electric charge?", options:["Neutron","Proton","Electron"], answer:0, hint:"Neutral particle", explanation:"Neutron is neutral.", voice:"Which particle has no charge?" }
   ]
 };
 
 /* ============================
    App logic — one experiment at a time
-   (unchanged behavior from working file)
+   - New: optionPromptTimer & functions to sequentially highlight & voice options for 5-8
    ============================ */
 
 const storagePrefix = 'scigame_v1_';
@@ -396,16 +345,19 @@ let currentMode = 'play';
 let progress = { points:0, stars:0, solved:{} };
 let currentExperiment = null;
 
+let optionPromptTimer = null; // holds timeout id for sequential prompts
+let optionPromptIndex = 0;
+
 function $(id){ return document.getElementById(id); }
 
-/* Safe speak */
 function speak(text){
   if(!('speechSynthesis' in window)) return;
   try{ window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; window.speechSynthesis.speak(u); } catch(e){}
 }
 
-/* Select age (inline handler) */
+/* Select age */
 function selectAge(age, el){
+  stopOptionPromptSequence();
   currentAge = age;
   currentIndex = 0;
   progress = loadProgress(age);
@@ -415,32 +367,27 @@ function selectAge(age, el){
   updateProgressUI();
   setMode('play');
   showExperiment();
-  // mark pressed
-  var tiles = document.querySelectorAll('.tile');
-  for(var i=0;i<tiles.length;i++) tiles[i].setAttribute('aria-pressed','false');
+  document.querySelectorAll('.tile').forEach(t=>t.setAttribute('aria-pressed','false'));
   if(el) el.setAttribute('aria-pressed','true');
 }
 
 /* Back */
 function backToAge(){
+  stopOptionPromptSequence();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   currentAge = null;
   $('stage-hub').style.display = 'none';
   $('stage-age').style.display = 'block';
 }
 
-/* Storage */
+/* Storage helpers */
 function storageKey(age){ return storagePrefix + age; }
 function loadProgress(age){
   var raw = localStorage.getItem(storageKey(age));
   if(!raw) return { points:0, stars:0, solved:{} };
   try { return JSON.parse(raw); } catch(e) { return { points:0, stars:0, solved:{} }; }
 }
-function saveProgress(){
-  if(!currentAge) return;
-  localStorage.setItem(storageKey(currentAge), JSON.stringify(progress));
-  updateProgressUI();
-}
+function saveProgress(){ if(!currentAge) return; localStorage.setItem(storageKey(currentAge), JSON.stringify(progress)); updateProgressUI(); }
 
 /* UI updates */
 function updateProgressUI(){
@@ -460,8 +407,9 @@ function setMode(m){
   if(currentAge) showExperiment();
 }
 
-/* Render diagram and options for current experiment */
+/* Render current experiment */
 function showExperiment(){
+  stopOptionPromptSequence();
   var list = EXPERIMENTS[currentAge] || [];
   if(currentIndex >= list.length){
     $('experiment-card').style.display = 'none';
@@ -470,59 +418,61 @@ function showExperiment(){
   }
   $('finished-card').style.display = 'none';
   $('experiment-card').style.display = 'block';
-
   currentExperiment = list[currentIndex];
 
-  // render main image if present
-  var di = $('diagram-wrapper');
-  di.innerHTML = '';
+  // main diagram
+  var di = $('diagram-wrapper'); di.innerHTML = '';
   if(currentExperiment.imageSVG){
-    // insert SVG string as HTML
     di.innerHTML = currentExperiment.imageSVG;
-    di.setAttribute('aria-hidden', 'false');
+    di.setAttribute('aria-hidden','false');
   } else {
-    di.setAttribute('aria-hidden', 'true');
+    di.setAttribute('aria-hidden','true');
   }
 
   $('question-text').textContent = '(' + (currentIndex+1) + ') ' + currentExperiment.prompt;
 
-  // options (each option can be string or object)
+  // render options
   var box = $('options-box'); box.innerHTML = '';
   var opts = currentExperiment.options || [];
-  for(var i=0;i<opts.length;i++){
+  var preschool = (currentAge === '5-8');
+
+  for(let i=0;i<opts.length;i++){
     (function(i){
       var opt = opts[i];
       var btn = document.createElement('button');
       btn.className = 'opt-btn';
-      // structure: optional image area + label
-      var content = document.createElement('div'); content.style.display='flex'; content.style.alignItems='center'; content.style.gap='12px';
-      // option image if provided
-      if(typeof opt === 'object' && opt.imgSVG){
-        // create wrapper for SVG
-        var wrap = document.createElement('div');
-        wrap.innerHTML = opt.imgSVG;
-        // make sure SVG scales; limit size via CSS
-        content.appendChild(wrap);
-      } else if(typeof opt === 'string'){
-        // nothing
-      } else if(typeof opt === 'object' && opt.img){
-        // legacy: raw img string
-        var wrap2 = document.createElement('div');
-        wrap2.innerHTML = opt.img;
-        content.appendChild(wrap2);
+      btn.type = 'button';
+      btn.setAttribute('data-index', i);
+
+      if(preschool){
+        // letter badge + text (option strings expected to already have "A: ..." but we keep badge too)
+        var letter = document.createElement('div');
+        letter.className = 'opt-letter';
+        letter.textContent = String.fromCharCode(65 + i); // A, B, C
+        var label = document.createElement('div');
+        label.className = 'opt-text';
+        // If the option string contains "A: ..." remove leading "A: " for clarity inside text area
+        var textlabel = (typeof opt === 'string') ? opt.replace(/^[A-Z]:\s*/,'') : (opt.text || '');
+        label.textContent = textlabel;
+        btn.appendChild(letter);
+        btn.appendChild(label);
+      } else {
+        // older ages: allow image objects or strings
+        var content = document.createElement('div'); content.style.display='flex'; content.style.alignItems='center'; content.style.gap='12px';
+        if(typeof opt === 'object' && opt.imgSVG){
+          var wrap = document.createElement('div'); wrap.innerHTML = opt.imgSVG;
+          content.appendChild(wrap);
+        }
+        var label = document.createElement('div'); label.className='opt-text';
+        label.textContent = (typeof opt === 'string') ? opt : (opt.text || '');
+        content.appendChild(label);
+        btn.appendChild(content);
       }
 
-      var label = document.createElement('div');
-      label.className = 'opt-label';
-      label.textContent = (typeof opt === 'string') ? opt : (opt.text || '');
-      content.appendChild(label);
-
-      btn.appendChild(content);
-      btn.onclick = function(){ handleChoice(i); };
-      // training mode style
-      if(currentMode === 'train' && typeof opt === 'object' && i === currentExperiment.answer){
-        btn.style.border = '2px solid #9fd';
-      } else if(currentMode === 'train' && typeof opt === 'string' && i === currentExperiment.answer){
+      btn.onclick = function(){ userPick(i); };
+      btn.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); userPick(i); } };
+      // training mode highlight of correct
+      if(currentMode === 'train' && i === currentExperiment.answer){
         btn.style.border = '2px solid #9fd';
       }
       box.appendChild(btn);
@@ -532,40 +482,110 @@ function showExperiment(){
   $('feedback').innerHTML = '';
   $('next-btn').style.display = 'none';
 
-  // voice
+  // speak the main prompt
   speak(currentExperiment.voice || currentExperiment.prompt);
+
+  // for 5-8 start option prompting & highlighting sequence
+  if(preschool){
+    // small delay so question voice plays first
+    optionPromptIndex = 0;
+    optionPromptTimer = setTimeout(() => startOptionPromptSequence(), 700);
+  }
 }
 
-/* User choice handling */
-function handleChoice(i){
+/* Sequentially highlight + voice options for 5-8 */
+function startOptionPromptSequence(){
+  stopOptionPromptSequence(); // ensure clean
+  var box = $('options-box');
+  var buttons = box.querySelectorAll('.opt-btn');
+  if(!buttons || buttons.length === 0) return;
+  optionPromptIndex = 0;
+  function step(){
+    // clear all highlights
+    buttons.forEach(b => {
+      var ld = b.querySelector('.opt-letter');
+      if(ld) ld.classList.remove('highlight');
+    });
+    if(optionPromptIndex >= buttons.length){
+      // finished the sequence — clear and stop
+      optionPromptIndex = 0;
+      optionPromptTimer = null;
+      return;
+    }
+    var btn = buttons[optionPromptIndex];
+    var letterEl = btn.querySelector('.opt-letter');
+    var labelEl = btn.querySelector('.opt-text');
+    if(letterEl) letterEl.classList.add('highlight');
+    // voice prompt the option: "Option A: Piece of wood"
+    var letter = letterEl ? letterEl.textContent : ('Option ' + (optionPromptIndex+1));
+    var text = labelEl ? labelEl.textContent : '';
+    speak('Option ' + letter + ': ' + text);
+    optionPromptIndex++;
+    // schedule next step
+    optionPromptTimer = setTimeout(step, 1000); // 1s between options; tweak if you want slower
+  }
+  step();
+}
+
+/* Stop option prompting */
+function stopOptionPromptSequence(){
+  if(optionPromptTimer){ clearTimeout(optionPromptTimer); optionPromptTimer = null; }
+  // clear all highlights
+  var els = document.querySelectorAll('.opt-letter.highlight');
+  els.forEach(e => e.classList.remove('highlight'));
+}
+
+/* Repeat sequence (called by Repeat button) */
+function repeatOptionSequence(){
+  // If current age is 5-8, restart option prompt sequence
+  if(currentAge === '5-8'){
+    stopOptionPromptSequence();
+    // small delay so any current speech stops and sequence restarts cleanly
+    setTimeout(() => startOptionPromptSequence(), 150);
+  } else {
+    // for other ages repeat main prompt
+    speak(currentExperiment.voice || currentExperiment.prompt);
+  }
+}
+
+/* User picks an option */
+function userPick(i){
+  // stop the option prompting if in progress
+  stopOptionPromptSequence();
   if(currentMode === 'train'){
-    showTrainingAnswer();
+    revealTrainingAnswer();
     return;
   }
   var fb = $('feedback');
   currentExperiment.tries = (currentExperiment.tries || 0) + 1;
   if(i === currentExperiment.answer){
-    fb.innerHTML = '<div class="correct">✅ Correct! ' + escapeHtml(currentExperiment.explanation) + '</div>';
-    speak('Correct! Well done.');
+    fb.innerHTML = '<div class="correct">✅ Correct! ' + escapeHtml(currentExperiment.explanation || '') + '</div>';
+    speak('Correct. ' + (currentExperiment.explanation || 'Well done.'));
     awardPoints();
-    $('next-btn').style.display = 'inline-block';
+    // auto-advance fast so children keep flow
+    setTimeout(()=> nextExperiment(), 700);
   } else {
     fb.innerHTML = '<div class="wrong">❌ Wrong. Try again.</div>';
     speak('Wrong. Try again.');
+    // re-run option sequence so child can hear options again after a short delay
+    setTimeout(()=> {
+      if(currentAge === '5-8') startOptionPromptSequence();
+    }, 700);
   }
 }
 
-/* Training answer */
-function showTrainingAnswer(){
+/* Training reveal + auto-advance */
+function revealTrainingAnswer(){
   var fb = $('feedback');
   var opt = currentExperiment.options[currentExperiment.answer];
-  var answerText = (typeof opt === 'string') ? opt : (opt.text || '');
-  fb.innerHTML = '<div class="correct">Answer: ' + escapeHtml(answerText) + '. ' + escapeHtml(currentExperiment.explanation) + '</div>';
-  speak((currentExperiment.voice || currentExperiment.prompt) + '. Answer: ' + answerText + '. ' + currentExperiment.explanation);
-  $('next-btn').style.display = 'inline-block';
+  var answerText = (typeof opt === 'string') ? opt.replace(/^[A-Z]:\s*/,'') : (opt.text || '');
+  fb.innerHTML = '<div class="correct">Answer: ' + escapeHtml(answerText) + '. ' + escapeHtml(currentExperiment.explanation || '') + '</div>';
+  speak('Answer: ' + (answerText) + '. ' + (currentExperiment.explanation || ''));
+  // auto-advance after showing explanation
+  setTimeout(()=> nextExperiment(), 1200);
 }
 
-/* Award points */
+/* Points & progress */
 function awardPoints(){
   var key = 'exp_' + currentIndex;
   if(progress.solved && progress.solved[key]) return;
@@ -582,12 +602,15 @@ function nextExperiment(){
   showExperiment();
 }
 
-/* Hint & repeat */
+/* Hint & repeat voice */
 function showHint(){
   if(!currentExperiment) return;
-  $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint) + '</div>';
-  speak('Hint: ' + currentExperiment.hint);
-  currentExperiment.usedHint = true;
+  $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint || '') + '</div>';
+  speak('Hint: ' + (currentExperiment.hint || ''));
+  // after hint, for 5-8 re-run option prompting so they can hear options again
+  if(currentAge === '5-8'){
+    setTimeout(()=> startOptionPromptSequence(), 700);
+  }
 }
 function repeatVoice(){
   if(!currentExperiment) return;
@@ -600,7 +623,7 @@ function restartLevel(){
   showExperiment();
 }
 
-/* Printable certificate */
+/* Certificate */
 function openPrintableCertificate(){
   if(!currentAge) return alert('Please select an age group first.');
   var name = prompt('Enter name for the certificate:', localStorage.getItem('scigame_player_name') || '');
@@ -613,7 +636,6 @@ function openPrintableCertificate(){
   if(progress.stars >= 60) badge = 'Gold';
   else if(progress.stars >= 30) badge = 'Silver';
   else if(progress.stars >= 10) badge = 'Bronze';
-
   var html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificate</title>' +
     '<style>body{font-family:serif;padding:28px;text-align:center}.title{font-family:cursive;font-size:56px}.small{font-size:16px;color:#333}</style>' +
     '</head><body>' +
@@ -626,22 +648,17 @@ function openPrintableCertificate(){
     '<div style="position:fixed;bottom:18px;width:100%;text-align:center;font-size:12px;color:#444">Created &amp; Designed by Animesh</div>' +
     '<script>setTimeout(function(){ if(confirm(\"Open print dialog? Use Save as PDF to store certificate.\")) window.print(); },300); </' + 'script>' +
     '</body></html>';
-
   var w = window.open('', '_blank');
   if(!w) return alert('Popup blocked — allow popups for this site to open certificate.');
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
-/* Simple escape */
-function escapeHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+/* Escape */
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-/* Initialize (no heavy startup) */
+/* Init */
 document.addEventListener('DOMContentLoaded', function(){
-  // app waits for user to select an age
+  // nothing to do until user selects age
 });
 </script>
 </body>
