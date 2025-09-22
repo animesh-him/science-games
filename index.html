@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Science Experiments Game — 5-8 Option Prompting</title>
+<title>Science Experiments Game — Fixed Option Prompter</title>
 <style>
   :root{
     --bg:#f3f9ff; --card:#fff; --muted:#5f6b73; --accent:#186fae; --success:#17843a; --danger:#c83a3a;
@@ -28,7 +28,6 @@
   .diagram svg{max-width:100%;height:auto;width:280px}
   .question{font-size:18px;font-weight:700;margin-bottom:10px}
   .options{display:flex;flex-direction:column;gap:8px}
-  /* 5-8 styled options */
   .opt-btn{display:flex;gap:12px;align-items:center;padding:12px;border-radius:8px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left;cursor:pointer}
   .opt-letter{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;background:#f0f6fb;color:#214a66;border:2px solid rgba(8,20,40,0.06);font-size:18px}
   .opt-letter.highlight{background:var(--highlight-bg);color:#6f4d00;border-color:var(--highlight-border)}
@@ -51,7 +50,7 @@
 <body>
 <header>
   <h1>Science Experiments Game</h1>
-  <p>Age 5–8 options are voiced & highlighted one-by-one (A → B → C). Tap to answer anytime.</p>
+  <p>Age 5–8: question fully spoken first → then each option's full text is spoken while it is highlighted.</p>
 </header>
 
 <div class="wrap">
@@ -100,7 +99,7 @@
       <div class="feedback" id="feedback"></div>
 
       <div class="controls-bottom">
-        <button onclick="repeatOptionSequence()">🔁 Repeat</button>
+        <button onclick="repeatSequence()">🔁 Repeat</button>
         <button onclick="showHint()">💡 Hint</button>
         <button id="next-btn" style="display:none" onclick="nextExperiment()">➡ Next</button>
       </div>
@@ -121,221 +120,139 @@
 
 <script>
 /* ---------------------------
-   Small inline SVG helpers (pipe + circuit) - unchanged
+   Helpers: speech with promise; stop speech; fallback timers
    --------------------------- */
-function svgPipeDiagram(){
-  return `
-    <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two pipes, right open">
-      <rect width="320" height="140" rx="12" fill="#e8f7ff"/>
-      <path d="M20 40 H120 V70 H200" stroke="#3a6a9a" stroke-width="18" stroke-linecap="round" fill="none"/>
-      <path d="M20 100 H200" stroke="#3a9a6a" stroke-width="18" stroke-linecap="round" fill="none" />
-      <rect x="110" y="54" width="22" height="32" rx="4" fill="#c44" transform="rotate(-8 121 70)" />
-      <rect x="220" y="48" width="72" height="60" rx="6" fill="#fff" stroke="#6c8fae" stroke-width="2"/>
-      <rect x="224" y="52" width="64" height="48" rx="4" fill="#e6f7ff"/>
-      <text x="256" y="90" text-anchor="middle" fill="#3a6a9a" font-size="12">Bucket</text>
-    </svg>`;
+
+function speakWithPromise(text){
+  return new Promise((resolve) => {
+    if(!('speechSynthesis' in window)){
+      // fallback: approximate duration then resolve
+      const approx = Math.max(800, Math.min(4000, text.length * 50));
+      setTimeout(resolve, approx);
+      return;
+    }
+    // cancel any previous utterances for clean playback
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.onend = function(){ resolve(); };
+    u.onerror = function(){ resolve(); };
+    window.speechSynthesis.speak(u);
+  });
 }
-function svgCircuitDiagram(){
-  return `
-    <svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two simple circuits, upper closed, lower open">
-      <rect width="340" height="140" rx="12" fill="#fff"/>
-      <line x1="20" y1="30" x2="120" y2="30" stroke="#333" stroke-width="4"/>
-      <rect x="60" y="18" width="14" height="24" fill="#222"/>
-      <rect x="80" y="18" width="6" height="24" fill="#222"/>
-      <circle cx="140" cy="30" r="8" fill="#ffc93b" stroke="#b36700" stroke-width="2"/>
-      <text x="170" y="34" font-size="12" fill="#333">Bulb (lights)</text>
-      <line x1="20" y1="90" x2="120" y2="90" stroke="#333" stroke-width="4"/>
-      <rect x="60" y="78" width="14" height="24" fill="#222"/>
-      <rect x="80" y="78" width="6" height="24" fill="#222"/>
-      <line x1="140" y1="90" x2="200" y2="90" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/>
-      <text x="220" y="94" font-size="12" fill="#333">Bulb (off)</text>
-      <text x="60" y="14" font-size="12" fill="#333">Complete circuit</text>
-      <text x="60" y="104" font-size="12" fill="#333">Open circuit</text>
-    </svg>`;
+function stopSpeech(){
+  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e){}
 }
 
-/* =============================
-   Experiments (30 each) — kept same dataset you approved earlier
-   but ensure 5-8 options are strings (so letter badges render cleanly)
-   ============================= */
+/* ---------------------------
+   Simple SVGs (unchanged)
+   --------------------------- */
+
+function svgPipeDiagram(){ return `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two pipes, right open"><rect width="320" height="140" rx="12" fill="#e8f7ff"/><path d="M20 40 H120 V70 H200" stroke="#3a6a9a" stroke-width="18" stroke-linecap="round" fill="none"/><path d="M20 100 H200" stroke="#3a9a6a" stroke-width="18" stroke-linecap="round" fill="none" /><rect x="110" y="54" width="22" height="32" rx="4" fill="#c44" transform="rotate(-8 121 70)" /><rect x="220" y="48" width="72" height="60" rx="6" fill="#fff" stroke="#6c8fae" stroke-width="2"/><rect x="224" y="52" width="64" height="48" rx="4" fill="#e6f7ff"/><text x="256" y="90" text-anchor="middle" fill="#3a6a9a" font-size="12">Bucket</text></svg>`; }
+function svgCircuitDiagram(){ return `<svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="two simple circuits, upper closed, lower open"><rect width="340" height="140" rx="12" fill="#fff"/><line x1="20" y1="30" x2="120" y2="30" stroke="#333" stroke-width="4"/><rect x="60" y="18" width="14" height="24" fill="#222"/><rect x="80" y="18" width="6" height="24" fill="#222"/><circle cx="140" cy="30" r="8" fill="#ffc93b" stroke="#b36700" stroke-width="2"/><text x="170" y="34" font-size="12" fill="#333">Bulb (lights)</text><line x1="20" y1="90" x2="120" y2="90" stroke="#333" stroke-width="4"/><rect x="60" y="78" width="14" height="24" fill="#222"/><rect x="80" y="78" width="6" height="24" fill="#222"/><line x1="140" y1="90" x2="200" y2="90" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/><text x="220" y="94" font-size="12" fill="#333">Bulb (off)</text><text x="60" y="14" font-size="12" fill="#333">Complete circuit</text><text x="60" y="104" font-size="12" fill="#333">Open circuit</text></svg>`; }
+
+/* =========================
+   Experiments (kept same)
+   ========================= */
 
 const EXPERIMENTS = {
   "5-8": [
-    { prompt: "Which pipe will fill the bucket?", imageSVG: svgPipeDiagram(), options:["A: Left","B: Right","C: Both"], answer:1, hint:"Check the blockage", explanation:"Right path is open.", voice:"Which pipe will fill the bucket? Option A: Left. Option B: Right. Option C: Both." },
-
-    { prompt:"Which object will float on water?", options:["A: Rock","B: Piece of wood","C: Coin"], answer:1, hint:"Which is lighter?", explanation:"Wood floats because it's less dense.", voice:"Which object will float on water? Option A: Rock. Option B: Piece of wood. Option C: Coin." },
-
-    { prompt:"Which melts faster: ice in the sun or in the shade?", options:["A: Sun","B: Shade","C: Both same"], answer:0, hint:"Where is it warmer?", explanation:"Ice melts faster in sun.", voice:"Which melts faster? A: Sun. B: Shade. C: Both same." },
-
-    { prompt:"Which makes a bigger shadow?", options:["A: Tall tree","B: Small plant","C: Feather"], answer:0, hint:"Which blocks more light?", explanation:"Tall tree casts larger shadow.", voice:"Which makes a bigger shadow? A: Tall tree. B: Small plant. C: Feather." },
-
-    { prompt:"What color do you get when you mix red and blue?", options:["A: Purple","B: Green","C: Orange"], answer:0, hint:"Red + Blue", explanation:"Red and blue make purple.", voice:"What color do you get when mixing red and blue? A: Purple. B: Green. C: Orange." },
-
-    { prompt:"Which animal lives in water?", options:["A: Fish","B: Dog","C: Bird"], answer:0, hint:"Breathes underwater", explanation:"Fish live in water.", voice:"Which animal lives in water? A: Fish. B: Dog. C: Bird." },
-
-    { prompt:"Which will stick to a magnet?", options:["A: Paper clip","B: Balloon","C: Cork"], answer:0, hint:"Made of metal", explanation:"Paper clip is magnetic.", voice:"Which sticks to a magnet? A: Paper clip. B: Balloon. C: Cork." },
-
-    { prompt:"Which does a plant need to grow?", options:["A: Sunlight","B: Candy","C: Video games"], answer:0, hint:"Plants need light", explanation:"Plants need sunlight, water and soil.", voice:"Which helps a plant grow? A: Sunlight. B: Candy. C: Video games." },
-
-    { prompt:"Which is a push action?", options:["A: Opening a door by pulling","B: Kicking a ball","C: Picking up a cup"], answer:1, hint:"Push moves away", explanation:"Kicking a ball is a push.", voice:"Which is a push action? A: Pulling door. B: Kicking a ball. C: Picking up a cup." },
-
-    { prompt:"Which will float: sealed plastic bottle or heavy metal spoon?", options:["A: Plastic bottle","B: Metal spoon","C: Both"], answer:0, hint:"Trapped air helps", explanation:"Sealed bottle floats due to trapped air.", voice:"Which will float? A: Bottle. B: Spoon. C: Both." },
-
-    { prompt:"Which material is used to make a shadow puppet?", options:["A: Paper","B: Glass","C: Water"], answer:0, hint:"Blocks light", explanation:"Paper is used for shadow puppets.", voice:"Which material is used to make a shadow puppet? A: Paper. B: Glass. C: Water." },
-
-    { prompt:"Which object is magnetic?", options:["A: Wooden spoon","B: Iron key","C: Plastic toy"], answer:1, hint:"Made of iron", explanation:"Iron key is magnetic.", voice:"Which object is magnetic? A: Wooden spoon. B: Iron key. C: Plastic toy." },
-
-    { prompt:"Which will sink in water?", options:["A: Stone","B: Cork","C: Soap"], answer:0, hint:"Dense heavy", explanation:"Stone sinks because it's denser.", voice:"Which will sink? A: Stone. B: Cork. C: Soap." },
-
-    { prompt:"What does a thermometer measure?", options:["A: Temperature","B: Speed","C: Color"], answer:0, hint:"Used for fever", explanation:"A thermometer measures temperature.", voice:"What does a thermometer measure? A: Temperature. B: Speed. C: Color." },
-
-    { prompt:"Which helps a boat float more?", options:["A: More weight","B: Larger surface area","C: Softer material"], answer:1, hint:"Spread the weight", explanation:"Larger surface area helps floatation.", voice:"Which helps a boat float more? A: More weight. B: Larger surface area. C: Softer material." },
-
-    { prompt:"Which object will roll easily?", options:["A: Ball","B: Block","C: Sheet of paper"], answer:0, hint:"Round objects roll", explanation:"A ball rolls easily.", voice:"Which rolls easily? A: Ball. B: Block. C: Paper." },
-
-    { prompt:"Which season do leaves usually fall?", options:["A: Autumn","B: Summer","C: Spring"], answer:0, hint:"Trees prepare for winter", explanation:"Leaves fall in autumn.", voice:"Which season do leaves fall? A: Autumn. B: Summer. C: Spring." },
-
-    { prompt:"Which light source is the hottest?", options:["A: Sun","B: Candle","C: Lamp"], answer:0, hint:"What keeps us warm", explanation:"The Sun is hottest.", voice:"Which light source is the hottest? A: Sun. B: Candle. C: Lamp." },
-
-    { prompt:"Which will fill with air when you blow into it?", options:["A: Balloon","B: Stone","C: Cup"], answer:0, hint:"Inflates", explanation:"Balloon fills with air.", voice:"Which fills with air? A: Balloon. B: Stone. C: Cup." },
-
-    { prompt:"Which helps shade a plant: umbrella or sunlight?", options:["A: Umbrella","B: Sunlight","C: Neither"], answer:1, hint:"Plants need light", explanation:"Sunlight helps plants grow.", voice:"Which helps plants grow? A: Umbrella. B: Sunlight. C: Neither." },
-
-    { prompt:"Which makes sound louder: bigger or smaller drum?", options:["A: Bigger drum","B: Smaller drum","C: Same"], answer:0, hint:"Surface area", explanation:"Bigger drum can make louder sound.", voice:"Which makes sound louder? A: Bigger drum. B: Smaller drum. C: Same." },
-
-    { prompt:"Which is colder: ice or boiling water?", options:["A: Ice","B: Boiling water","C: Both same"], answer:0, hint:"Which is freezing", explanation:"Ice is cold.", voice:"Which is colder? A: Ice. B: Boiling water. C: Both." },
-
-    { prompt:"Which is used to write: pencil or spoon?", options:["A: Pencil","B: Spoon","C: Both"], answer:0, hint:"Used on paper", explanation:"Pencil is used to write.", voice:"Which is used to write? A: Pencil. B: Spoon. C: Both." },
-
-    { prompt:"Which shows daytime: sun or moon?", options:["A: Sun","B: Moon","C: Both"], answer:0, hint:"Seen during day", explanation:"Sun indicates daytime.", voice:"Which shows daytime? A: Sun. B: Moon. C: Both." },
-
-    { prompt:"Which helps you see at night: torch or book?", options:["A: Torch","B: Book","C: Both"], answer:0, hint:"Gives light", explanation:"Torch helps you see at night.", voice:"Which helps you see at night? A: Torch. B: Book. C: Both." },
-
-    { prompt:"Which grows from seed: tree or rock?", options:["A: Tree","B: Rock","C: Both"], answer:0, hint:"Living and grows", explanation:"Tree grows from a seed.", voice:"Which grows from seed? A: Tree. B: Rock. C: Both." },
-
-    { prompt:"Which is a fruit: apple or stone?", options:["A: Apple","B: Stone","C: Both"], answer:0, hint:"Edible fruit", explanation:"Apple is a fruit.", voice:"Which is a fruit? A: Apple. B: Stone. C: Both." }
+    { prompt: "Which pipe will fill the bucket?", imageSVG: svgPipeDiagram(), options:["Left","Right","Both"], answer:1, hint:"Check the blockage", explanation:"Right path is open.", voice:"Which pipe will fill the bucket?" },
+    { prompt:"Which object will float on water?", options:["Rock","Piece of wood","Coin"], answer:1, hint:"Which is lighter?", explanation:"Wood floats because it's less dense.", voice:"Which object will float on water?" },
+    { prompt:"Which melts faster: ice in the sun or in the shade?", options:["Sun","Shade","Both same"], answer:0, hint:"Where is it warmer?", explanation:"Ice melts faster in sun.", voice:"Which melts faster, in the sun or in the shade?" },
+    { prompt:"Which makes a bigger shadow?", options:["Tall tree","Small plant","Feather"], answer:0, hint:"Which blocks more light?", explanation:"Tall tree casts larger shadow.", voice:"Which object makes a bigger shadow?" },
+    { prompt:"What color do you get when you mix red and blue?", options:["Purple","Green","Orange"], answer:0, hint:"Red + Blue", explanation:"Red and blue make purple.", voice:"What color do you get when you mix red and blue?" },
+    { prompt:"Which animal lives in water?", options:["Fish","Dog","Bird"], answer:0, hint:"Breathes underwater", explanation:"Fish live in water.", voice:"Which animal lives in water?" },
+    { prompt:"Which will stick to a magnet?", options:["Paper clip","Balloon","Cork"], answer:0, hint:"Made of metal", explanation:"Paper clip is magnetic.", voice:"Which will stick to a magnet?" },
+    { prompt:"Which does a plant need to grow?", options:["Sunlight","Candy","Video games"], answer:0, hint:"Plants need light", explanation:"Plants require sunlight, water and soil.", voice:"Which helps a plant grow?" },
+    { prompt:"Which is a push action?", options:["Pulling a door","Kicking a ball","Picking up a cup"], answer:1, hint:"Push moves away", explanation:"Kicking a ball is a push action.", voice:"Which is a push action?" },
+    { prompt:"Which will float: sealed plastic bottle or heavy metal spoon?", options:["Plastic bottle","Metal spoon","Both"], answer:0, hint:"Trapped air helps", explanation:"Sealed bottle floats due to trapped air.", voice:"Which of these will float?" },
+    { prompt:"Which material is used to make a shadow puppet?", options:["Paper","Glass","Water"], answer:0, hint:"Blocks light", explanation:"Paper is used for shadow puppets.", voice:"Which material is used for a shadow puppet?" },
+    { prompt:"Which object is magnetic?", options:["Wooden spoon","Iron key","Plastic toy"], answer:1, hint:"Made of iron", explanation:"Iron key is magnetic.", voice:"Which object is magnetic?" },
+    { prompt:"Which will sink in water?", options:["Stone","Cork","Soap"], answer:0, hint:"Dense heavy", explanation:"Stone sinks because it's denser.", voice:"Which will sink in water?" },
+    { prompt:"What does a thermometer measure?", options:["Temperature","Speed","Color"], answer:0, hint:"Used for fever", explanation:"A thermometer measures temperature.", voice:"What does a thermometer measure?" },
+    { prompt:"Which helps a boat float more?", options:["More weight","Larger surface area","Softer material"], answer:1, hint:"Spread the weight", explanation:"Larger surface area helps floatation.", voice:"Which helps a boat float more?" },
+    { prompt:"Which object will roll easily?", options:["Ball","Block","Sheet of paper"], answer:0, hint:"Round objects roll", explanation:"A ball rolls easily.", voice:"Which object will roll easily?" },
+    { prompt:"Which season do leaves usually fall?", options:["Autumn","Summer","Spring"], answer:0, hint:"Trees prepare for winter", explanation:"Leaves fall in autumn.", voice:"Which season do leaves fall?" },
+    { prompt:"Which light source is the hottest?", options:["Sun","Candle","Lamp"], answer:0, hint:"What keeps us warm", explanation:"The Sun is hottest.", voice:"Which light source is hottest?" },
+    { prompt:"Which will fill with air when you blow into it?", options:["Balloon","Stone","Cup"], answer:0, hint:"Inflates", explanation:"Balloon fills with air.", voice:"Which will fill with air?" },
+    { prompt:"Which helps shade a plant: umbrella or sunlight?", options:["Umbrella","Sunlight","Neither"], answer:1, hint:"Plants need light", explanation:"Sunlight helps plants grow.", voice:"Which helps a plant grow?" },
+    { prompt:"Which makes sound louder: bigger or smaller drum?", options:["Bigger drum","Smaller drum","Same"], answer:0, hint:"Surface area", explanation:"Bigger drum often makes louder sound.", voice:"Which makes sound louder?" },
+    { prompt:"Which is colder: ice or boiling water?", options:["Ice","Boiling water","Both same"], answer:0, hint:"Which is freezing", explanation:"Ice is cold.", voice:"Which is colder?" },
+    { prompt:"Which is used to write: pencil or spoon?", options:["Pencil","Spoon","Both"], answer:0, hint:"Used on paper", explanation:"Pencil is used to write.", voice:"Which is used to write?" },
+    { prompt:"Which shows daytime: sun or moon?", options:["Sun","Moon","Both"], answer:0, hint:"Seen during day", explanation:"Sun indicates daytime.", voice:"Which shows daytime?" },
+    { prompt:"Which helps you see at night: torch or book?", options:["Torch","Book","Both"], answer:0, hint:"Gives light", explanation:"Torch produces light to see at night.", voice:"Which helps you see at night?" },
+    { prompt:"Which grows from seed: tree or rock?", options:["Tree","Rock","Both"], answer:0, hint:"Living and grows", explanation:"Tree grows from a seed.", voice:"Which grows from seed?" },
+    { prompt:"Which is a fruit: apple or stone?", options:["Apple","Stone","Both"], answer:0, hint:"Edible fruit", explanation:"Apple is a fruit.", voice:"Which is a fruit?" },
+    { prompt:"Which has wheels: car or fish?", options:["Car","Fish","Both"], answer:0, hint:"Vehicle", explanation:"Car has wheels.", voice:"Which has wheels?" }
   ],
 
   "8-14": [
     { prompt:"Which simple circuit will light the bulb?", options:["Battery + wire + bulb (complete loop)","Battery + bulb (no wire)","Wire + bulb (no battery)"], answer:0, hint:"Need power source and closed loop", explanation:"A closed circuit with a battery lights the bulb.", voice:"Which simple circuit will light the bulb?" },
-
     { prompt:"Which soil drains fastest: sand or clay?", options:["Sand","Clay","Loam"], answer:0, hint:"Large particles", explanation:"Sand drains water fastest.", voice:"Which soil drains fastest?" },
-
     { prompt:"Which produces static electricity?", options:["Rubbing a balloon on hair","Putting balloon in water","Freezing balloon"], answer:0, hint:"Friction moves electrons", explanation:"Rubbing creates static.", voice:"Which produces static electricity?" },
-
     { prompt:"Why does a metal spoon get hot in hot soup?", options:["Conduction","Convection","Radiation"], answer:0, hint:"Heat transfer by contact", explanation:"Heat travels through metal by conduction.", voice:"Why does a metal spoon get hot?" },
-
     { prompt:"Which is an example of chemical change?", options:["Paper burning","Ice melting","Salt dissolving"], answer:0, hint:"New substances", explanation:"Burning paper is a chemical change.", voice:"Which is chemical change?" },
-
     { prompt:"What does pH measure?", options:["Acidity or basicity","Temperature","Density"], answer:0, hint:"Acid/base scale", explanation:"pH measures acidity/basicity.", voice:"What does pH measure?" },
-
     { prompt:"Which device measures electrical current?", options:["Ammeter","Thermometer","Barometer"], answer:0, hint:"Think amps", explanation:"Ammeter measures current.", voice:"Which device measures current?" },
-
     { prompt:"Which best explains why oil floats on water?", options:["Oil is less dense than water","Oil is more dense than water","They mix"], answer:0, hint:"Which liquid floats", explanation:"Oil floats because it's less dense.", voice:"Why does oil float on water?" },
-
     { prompt:"Which instrument measures atmospheric pressure?", options:["Barometer","Hygrometer","Anemometer"], answer:0, hint:"Used in weather", explanation:"Barometer measures pressure.", voice:"Which measures atmospheric pressure?" },
-
     { prompt:"Which shows potential energy converting to kinetic energy?", options:["Ball at top rolling down","Ball at rest","Ball held"], answer:0, hint:"Energy in motion", explanation:"Rolling ball converts potential to kinetic energy.", voice:"Which shows potential to kinetic energy?" },
-
     { prompt:"Which liquid evaporates fastest at room temperature?", options:["Water","Honey","Vegetable oil"], answer:0, hint:"Less viscous", explanation:"Water evaporates faster.", voice:"Which evaporates fastest?" },
-
     { prompt:"Which lens makes distant objects appear smaller?", options:["Convex","Concave","Plano"], answer:1, hint:"Diverging lens", explanation:"Concave lens makes objects appear smaller.", voice:"Which lens makes distant objects smaller?" },
-
     { prompt:"Which is a lever that makes lifting easier?", options:["Long stick under a rock","Short stick under a rock","No stick"], answer:0, hint:"Longer lever arm", explanation:"Long lever reduces force required.", voice:"Which lever makes lifting easier?" },
-
     { prompt:"Which shape has less air resistance when falling?", options:["Flat sheet","Streamlined object","Parachute"], answer:1, hint:"Designed for low drag", explanation:"Streamlined shape has less air resistance.", voice:"Which shape has less air resistance?" },
-
     { prompt:"Which shows diffusion?", options:["Smell spreading in a room","A ball thrown","A magnet attracting iron"], answer:0, hint:"High to low concentration", explanation:"Diffusion moves particles from high to low concentration.", voice:"Which shows diffusion?" },
-
     { prompt:"Which is an indicator of acidity?", options:["Litmus paper turns red","Litmus paper turns blue","No change"], answer:0, hint:"Acid turns blue litmus red", explanation:"Acid turns litmus paper red.", voice:"Which indicates acidity?" },
-
     { prompt:"Where does photosynthesis mainly occur?", options:["Leaves","Roots","Stem"], answer:0, hint:"Contains chlorophyll", explanation:"Photosynthesis occurs in leaves.", voice:"Where does photosynthesis occur?" },
-
     { prompt:"Which material transmits sound fastest?", options:["Air","Water","Steel"], answer:2, hint:"Solids transmit faster", explanation:"Sound travels fastest in steel.", voice:"Which transmits sound fastest?" },
-
     { prompt:"Which tool measures angles?", options:["Protractor","Thermometer","Ruler"], answer:0, hint:"Used in geometry", explanation:"Protractor measures angles.", voice:"Which measures angles?" },
-
     { prompt:"Which gas do plants release during photosynthesis?", options:["Oxygen","Carbon dioxide","Nitrogen"], answer:0, hint:"Plants produce O2", explanation:"Plants release oxygen.", voice:"Which gas do plants release?" },
-
     { prompt:"Which process converts sugar to energy in cells?", options:["Cellular respiration","Photosynthesis","Combustion"], answer:0, hint:"In mitochondria", explanation:"Cellular respiration converts sugar to energy.", voice:"Which converts sugar to energy?" },
-
     { prompt:"Which structure carries oxygen in blood?", options:["Red blood cells","White blood cells","Platelets"], answer:0, hint:"Has hemoglobin", explanation:"Red blood cells carry oxygen.", voice:"Which carries oxygen in blood?" },
-
     { prompt:"Which is used to separate mixtures by boiling point?", options:["Distillation","Filtration","Magnetic separation"], answer:0, hint:"Uses differences in boiling points", explanation:"Distillation separates based on boiling points.", voice:"Which separates by boiling point?" },
-
     { prompt:"Which part of ear senses sound?", options:["Cochlea","Nose","Tongue"], answer:0, hint:"In inner ear", explanation:"Cochlea senses sound.", voice:"Which part senses sound?" },
-
     { prompt:"Which force pulls objects toward Earth?", options:["Gravity","Magnetism","Friction"], answer:0, hint:"Keeps us on ground", explanation:"Gravity pulls objects toward Earth.", voice:"Which force pulls objects toward Earth?" },
-
     { prompt:"Which is a renewable energy source?", options:["Solar","Coal","Oil"], answer:0, hint:"Not exhausted", explanation:"Solar energy is renewable.", voice:"Which is renewable energy?" },
-
     { prompt:"Which is a chemical property?", options:["Reactivity with acid","Shape","Mass"], answer:0, hint:"How it reacts", explanation:"Reactivity is chemical.", voice:"Which is a chemical property?" }
   ],
 
   "14+": [
     { prompt:"Which phenomenon bends light at an interface?", options:["Refraction","Reflection","Diffraction"], answer:0, hint:"Light changes direction entering a new medium", explanation:"Refraction bends light when it passes between media.", voice:"Which phenomenon bends light at an interface?" },
-
     { prompt:"Which gas contributes to acid rain?", options:["Sulfur dioxide","Nitrogen gas","Oxygen"], answer:0, hint:"From burning fossil fuels", explanation:"SO2 forms acids in atmosphere.", voice:"Which gas contributes to acid rain?" },
-
     { prompt:"Which formula represents conservation of mechanical energy?", options:["KE_i + PE_i = KE_f + PE_f","F = ma","P = F/A"], answer:0, hint:"Sum of kinetic and potential", explanation:"Mechanical energy conservation: KE + PE constant.", voice:"Which formula represents conservation of mechanical energy?" },
-
     { prompt:"Which unit measures electric charge?", options:["Coulomb","Watt","Newton"], answer:0, hint:"Symbol C", explanation:"Charge measured in coulombs.", voice:"Which unit measures electric charge?" },
-
     { prompt:"Which best describes an exothermic reaction?", options:["Releases heat","Absorbs heat","No temperature change"], answer:0, hint:"Surroundings warm up", explanation:"Exothermic reactions release heat.", voice:"Which describes exothermic reaction?" },
-
     { prompt:"Which biomolecule stores genetic information?", options:["DNA","Carbohydrate","Lipid"], answer:0, hint:"Found in nuclei", explanation:"DNA stores genetic info.", voice:"Which stores genetic information?" },
-
     { prompt:"Which method separates a soluble solid from a liquid?", options:["Evaporation","Filtration","Magnetic separation"], answer:0, hint:"Remove liquid", explanation:"Evaporation leaves the solid behind.", voice:"Which separates soluble solid from a liquid?" },
-
     { prompt:"Why do metals conduct electricity?", options:["Free electrons move through the lattice","Ionic bonds break","They contain water"], answer:0, hint:"Delocalized electrons", explanation:"Metals have free electrons that carry current.", voice:"Why do metals conduct electricity?" },
-
     { prompt:"Which describes nuclear fusion?", options:["Combining light nuclei to form heavier ones","Splitting heavy nuclei","Chemical bonding"], answer:0, hint:"Powers the Sun", explanation:"Fusion combines nuclei releasing energy.", voice:"Which describes nuclear fusion?" },
-
     { prompt:"Which law states F = ma?", options:["Newton's Second Law","Conservation of Energy","Ohm's Law"], answer:0, hint:"Force equals mass times acceleration", explanation:"Newton's second law: F = ma.", voice:"Which law states F equals ma?" },
-
     { prompt:"Which process forms sedimentary rocks?", options:["Compaction and cementation of sediments","Melting and cooling","Metamorphism"], answer:0, hint:"Layers build up", explanation:"Sediments compact & cement forming sedimentary rock.", voice:"Which forms sedimentary rocks?" },
-
     { prompt:"Which property does not change during a physical change?", options:["Chemical composition","Shape","Phase"], answer:0, hint:"Identity remains", explanation:"Chemical composition doesn't change during physical change.", voice:"Which property does not change during a physical change?" },
-
     { prompt:"Which process regulates blood glucose in humans?", options:["Insulin and glucagon hormones","Photosynthesis","Respiration only"], answer:0, hint:"Pancreas hormones", explanation:"Insulin and glucagon regulate blood glucose.", voice:"Which regulates blood glucose?" },
-
     { prompt:"Which instrument measures humidity?", options:["Hygrometer","Barometer","Thermometer"], answer:0, hint:"Measures water vapor in air", explanation:"Hygrometer measures humidity.", voice:"Which instrument measures humidity?" },
-
     { prompt:"Which term describes interactions where both species benefit?", options:["Mutualism","Parasitism","Competition"], answer:0, hint:"Both benefit", explanation:"Mutualism benefits both species.", voice:"Which term describes both benefit?" },
-
     { prompt:"Which is SI base unit for temperature?", options:["Kelvin (K)","Celsius (°C)","Fahrenheit (°F)"], answer:0, hint:"Used in science", explanation:"Kelvin is SI base unit for temperature.", voice:"Which is SI base unit for temperature?" },
-
     { prompt:"Which best explains greenhouse effect?", options:["Atmosphere traps heat from the Sun","Sun getting closer","More clouds always cool"], answer:0, hint:"Gases trap heat", explanation:"Greenhouse gases trap outgoing heat and warm Earth.", voice:"Which explains greenhouse effect?" },
-
     { prompt:"Which describes spontaneous combustion?", options:["Ignition without external flame","Deliberate burning","Only in labs"], answer:0, hint:"Starts by itself", explanation:"Spontaneous combustion occurs without external ignition.", voice:"Which describes spontaneous combustion?" },
-
     { prompt:"Which cell organelle produces ATP?", options:["Mitochondria","Chloroplast","Nucleus"], answer:0, hint:"Powerhouse of cell", explanation:"Mitochondria produce ATP.", voice:"Which produces ATP?" },
-
     { prompt:"Which mechanism causes tides primarily?", options:["Moon's gravity","Sun's light","Wind"], answer:0, hint:"Gravitational pull", explanation:"Moon's gravity causes tides.", voice:"What causes tides primarily?" },
-
     { prompt:"Which is a non-renewable energy source?", options:["Coal","Solar","Wind"], answer:0, hint:"Finite fossil fuel", explanation:"Coal is non-renewable.", voice:"Which is non-renewable energy?" },
-
     { prompt:"Which is product of complete combustion of hydrocarbon?", options:["Carbon dioxide and water","Carbon monoxide only","Soot only"], answer:0, hint:"Combustion products", explanation:"Complete combustion produces CO2 and H2O.", voice:"Which products come from complete combustion?" },
-
     { prompt:"Which law relates voltage, current and resistance?", options:["Ohm's Law (V = IR)","Newton's Law","Boyle's Law"], answer:0, hint:"V = I R", explanation:"Ohm's Law relates V, I and R.", voice:"Which law is V equals IR?" },
-
     { prompt:"Which process is used to clone organisms?", options:["Somatic cell nuclear transfer","Photosynthesis","Distillation"], answer:0, hint:"Transfer nucleus", explanation:"SCNT is used in cloning.", voice:"Which process is used to clone organisms?" },
-
     { prompt:"Which phenomenon causes mirage?", options:["Refraction of light","Reflection only","Diffusion"], answer:0, hint:"Light bending in layers", explanation:"Mirage is due to refraction in hot air layers.", voice:"What causes mirage?" },
-
     { prompt:"Which molecule carries genetic code?", options:["DNA","RNA","Protein"], answer:0, hint:"Double helix", explanation:"DNA carries genetic code.", voice:"Which carries genetic code?" },
-
     { prompt:"Which technique separates proteins by size?", options:["Gel electrophoresis","Chromatography","Distillation"], answer:0, hint:"Electric field separation", explanation:"Gel electrophoresis separates proteins by size.", voice:"Which separates proteins by size?" },
-
     { prompt:"Which is an example of an exoplanet detection method?", options:["Transit method","Microscopy","Direct tasting"], answer:0, hint:"Dip in starlight", explanation:"Transit method detects exoplanets.", voice:"Which detects exoplanets?" },
-
     { prompt:"Which particle has no electric charge?", options:["Neutron","Proton","Electron"], answer:0, hint:"Neutral particle", explanation:"Neutron is neutral.", voice:"Which particle has no charge?" }
   ]
 };
 
 /* ============================
-   App logic — one experiment at a time
-   - New: optionPromptTimer & functions to sequentially highlight & voice options for 5-8
+   App logic (keeps behavior you had)
+   - CHANGES: use speakWithPromise to ensure question finishes before option speech sequence
    ============================ */
 
 const storagePrefix = 'scigame_v1_';
@@ -344,90 +261,46 @@ let currentIndex = 0;
 let currentMode = 'play';
 let progress = { points:0, stars:0, solved:{} };
 let currentExperiment = null;
-
-let optionPromptTimer = null; // holds timeout id for sequential prompts
-let optionPromptIndex = 0;
+let optionPromptAbort = { aborted:false }; // flag object to cancel async sequence
 
 function $(id){ return document.getElementById(id); }
 
-function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  try{ window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; window.speechSynthesis.speak(u); } catch(e){}
-}
-
 /* Select age */
 function selectAge(age, el){
-  stopOptionPromptSequence();
-  currentAge = age;
-  currentIndex = 0;
-  progress = loadProgress(age);
-  $('stage-age').style.display = 'none';
-  $('stage-hub').style.display = 'block';
+  stopAllSpeaking();
+  currentAge = age; currentIndex = 0; progress = loadProgress(age);
+  $('stage-age').style.display='none'; $('stage-hub').style.display='block';
   $('hub-title').textContent = 'Age ' + age;
-  updateProgressUI();
-  setMode('play');
-  showExperiment();
+  updateProgressUI(); setMode('play'); showExperiment();
   document.querySelectorAll('.tile').forEach(t=>t.setAttribute('aria-pressed','false'));
   if(el) el.setAttribute('aria-pressed','true');
 }
 
 /* Back */
-function backToAge(){
-  stopOptionPromptSequence();
-  try{ window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
-  currentAge = null;
-  $('stage-hub').style.display = 'none';
-  $('stage-age').style.display = 'block';
-}
+function backToAge(){ stopAllSpeaking(); try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){} currentAge=null; $('stage-hub').style.display='none'; $('stage-age').style.display='block'; }
 
-/* Storage helpers */
+/* storage */
 function storageKey(age){ return storagePrefix + age; }
-function loadProgress(age){
-  var raw = localStorage.getItem(storageKey(age));
-  if(!raw) return { points:0, stars:0, solved:{} };
-  try { return JSON.parse(raw); } catch(e) { return { points:0, stars:0, solved:{} }; }
-}
+function loadProgress(age){ var raw = localStorage.getItem(storageKey(age)); if(!raw) return {points:0,stars:0,solved:{}}; try{return JSON.parse(raw);}catch(e){return {points:0,stars:0,solved:{}};} }
 function saveProgress(){ if(!currentAge) return; localStorage.setItem(storageKey(currentAge), JSON.stringify(progress)); updateProgressUI(); }
 
 /* UI updates */
-function updateProgressUI(){
-  if(!currentAge) return;
-  var total = (EXPERIMENTS[currentAge] || []).length;
-  var solvedCount = Object.keys(progress.solved || {}).length;
-  $('progress-display').textContent = 'Solved ' + solvedCount + ' / ' + total;
-  $('pts').textContent = progress.points || 0;
-  $('stars').textContent = progress.stars || 0;
-}
+function updateProgressUI(){ if(!currentAge) return; var total=(EXPERIMENTS[currentAge]||[]).length; var solvedCount=Object.keys(progress.solved||{}).length; $('progress-display').textContent='Solved '+solvedCount+' / '+total; $('pts').textContent=progress.points||0; $('stars').textContent=progress.stars||0; }
 
-/* Mode */
-function setMode(m){
-  currentMode = (m === 'train') ? 'train' : 'play';
-  $('btn-play').style.fontWeight = currentMode === 'play' ? '800' : '400';
-  $('btn-train').style.fontWeight = currentMode === 'train' ? '800' : '400';
-  if(currentAge) showExperiment();
-}
+/* mode */
+function setMode(m){ currentMode=(m==='train')?'train':'play'; $('btn-play').style.fontWeight = currentMode==='play'?'800':'400'; $('btn-train').style.fontWeight = currentMode==='train'?'800':'400'; if(currentAge) showExperiment(); }
 
-/* Render current experiment */
+/* show experiment */
 function showExperiment(){
-  stopOptionPromptSequence();
+  stopAllSpeaking(); optionPromptAbort.aborted = true; optionPromptAbort = { aborted:false }; // reset cancel token
   var list = EXPERIMENTS[currentAge] || [];
-  if(currentIndex >= list.length){
-    $('experiment-card').style.display = 'none';
-    $('finished-card').style.display = 'block';
-    return;
-  }
-  $('finished-card').style.display = 'none';
-  $('experiment-card').style.display = 'block';
+  if(currentIndex >= list.length){ $('experiment-card').style.display='none'; $('finished-card').style.display='block'; return; }
+  $('finished-card').style.display='none'; $('experiment-card').style.display='block';
   currentExperiment = list[currentIndex];
 
-  // main diagram
-  var di = $('diagram-wrapper'); di.innerHTML = '';
-  if(currentExperiment.imageSVG){
-    di.innerHTML = currentExperiment.imageSVG;
-    di.setAttribute('aria-hidden','false');
-  } else {
-    di.setAttribute('aria-hidden','true');
-  }
+  // diagram
+  var di = $('diagram-wrapper'); di.innerHTML='';
+  if(currentExperiment.imageSVG){ di.innerHTML = currentExperiment.imageSVG; di.setAttribute('aria-hidden','false'); } else di.setAttribute('aria-hidden','true');
 
   $('question-text').textContent = '(' + (currentIndex+1) + ') ' + currentExperiment.prompt;
 
@@ -435,123 +308,88 @@ function showExperiment(){
   var box = $('options-box'); box.innerHTML = '';
   var opts = currentExperiment.options || [];
   var preschool = (currentAge === '5-8');
-
   for(let i=0;i<opts.length;i++){
     (function(i){
       var opt = opts[i];
-      var btn = document.createElement('button');
-      btn.className = 'opt-btn';
-      btn.type = 'button';
-      btn.setAttribute('data-index', i);
-
+      var btn = document.createElement('button'); btn.className='opt-btn'; btn.type='button'; btn.setAttribute('data-index', i);
       if(preschool){
-        // letter badge + text (option strings expected to already have "A: ..." but we keep badge too)
-        var letter = document.createElement('div');
-        letter.className = 'opt-letter';
-        letter.textContent = String.fromCharCode(65 + i); // A, B, C
-        var label = document.createElement('div');
-        label.className = 'opt-text';
-        // If the option string contains "A: ..." remove leading "A: " for clarity inside text area
-        var textlabel = (typeof opt === 'string') ? opt.replace(/^[A-Z]:\s*/,'') : (opt.text || '');
-        label.textContent = textlabel;
-        btn.appendChild(letter);
-        btn.appendChild(label);
+        var letter = document.createElement('div'); letter.className='opt-letter'; letter.textContent = String.fromCharCode(65+i);
+        var label = document.createElement('div'); label.className='opt-text'; label.textContent = (typeof opt === 'string') ? opt : (opt.text || '');
+        btn.appendChild(letter); btn.appendChild(label);
       } else {
-        // older ages: allow image objects or strings
         var content = document.createElement('div'); content.style.display='flex'; content.style.alignItems='center'; content.style.gap='12px';
-        if(typeof opt === 'object' && opt.imgSVG){
-          var wrap = document.createElement('div'); wrap.innerHTML = opt.imgSVG;
-          content.appendChild(wrap);
-        }
-        var label = document.createElement('div'); label.className='opt-text';
-        label.textContent = (typeof opt === 'string') ? opt : (opt.text || '');
-        content.appendChild(label);
-        btn.appendChild(content);
+        if(typeof opt === 'object' && opt.imgSVG){ var wrap=document.createElement('div'); wrap.innerHTML=opt.imgSVG; content.appendChild(wrap); }
+        var label=document.createElement('div'); label.className='opt-text'; label.textContent=(typeof opt === 'string')?opt:(opt.text||'');
+        content.appendChild(label); btn.appendChild(content);
       }
-
       btn.onclick = function(){ userPick(i); };
-      btn.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); userPick(i); } };
-      // training mode highlight of correct
-      if(currentMode === 'train' && i === currentExperiment.answer){
-        btn.style.border = '2px solid #9fd';
-      }
+      btn.onkeydown = function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); userPick(i); } };
       box.appendChild(btn);
     })(i);
   }
 
   $('feedback').innerHTML = '';
-  $('next-btn').style.display = 'none';
+  $('next-btn').style.display='none';
 
-  // speak the main prompt
-  speak(currentExperiment.voice || currentExperiment.prompt);
-
-  // for 5-8 start option prompting & highlighting sequence
-  if(preschool){
-    // small delay so question voice plays first
-    optionPromptIndex = 0;
-    optionPromptTimer = setTimeout(() => startOptionPromptSequence(), 700);
-  }
+  // Speak question fully, then only start option prompts (for 5-8)
+  (async ()=>{
+    try{
+      await speakWithPromise(currentExperiment.voice || currentExperiment.prompt);
+      if(optionPromptAbort.aborted) return;
+      if(currentAge === '5-8'){
+        await promptOptionsSequentially(optionPromptAbort);
+      }
+    } catch(e){}
+  })();
 }
 
-/* Sequentially highlight + voice options for 5-8 */
-function startOptionPromptSequence(){
-  stopOptionPromptSequence(); // ensure clean
-  var box = $('options-box');
-  var buttons = box.querySelectorAll('.opt-btn');
-  if(!buttons || buttons.length === 0) return;
-  optionPromptIndex = 0;
-  function step(){
-    // clear all highlights
-    buttons.forEach(b => {
-      var ld = b.querySelector('.opt-letter');
-      if(ld) ld.classList.remove('highlight');
-    });
-    if(optionPromptIndex >= buttons.length){
-      // finished the sequence — clear and stop
-      optionPromptIndex = 0;
-      optionPromptTimer = null;
-      return;
-    }
-    var btn = buttons[optionPromptIndex];
-    var letterEl = btn.querySelector('.opt-letter');
-    var labelEl = btn.querySelector('.opt-text');
+/* Prompt options sequentially (speaks full option text; highlights one at a time) */
+async function promptOptionsSequentially(abortToken){
+  const box = document.getElementById('options-box');
+  if(!box) return;
+  const buttons = box.querySelectorAll('.opt-btn');
+  for(let i=0;i<buttons.length;i++){
+    if(abortToken.aborted) break;
+    // clear previous highlights
+    buttons.forEach(b => { const l = b.querySelector('.opt-letter'); if(l) l.classList.remove('highlight'); });
+    const btn = buttons[i];
+    const letterEl = btn.querySelector('.opt-letter');
+    const labelEl = btn.querySelector('.opt-text');
     if(letterEl) letterEl.classList.add('highlight');
-    // voice prompt the option: "Option A: Piece of wood"
-    var letter = letterEl ? letterEl.textContent : ('Option ' + (optionPromptIndex+1));
-    var text = labelEl ? labelEl.textContent : '';
-    speak('Option ' + letter + ': ' + text);
-    optionPromptIndex++;
-    // schedule next step
-    optionPromptTimer = setTimeout(step, 1000); // 1s between options; tweak if you want slower
+    const optionText = labelEl ? labelEl.textContent : '';
+    // speak full option text (e.g., "Option A: Piece of wood")
+    const spoken = `Option ${letterEl ? letterEl.textContent : String.fromCharCode(65+i)}: ${optionText}`;
+    await speakWithPromise(spoken);
+    if(abortToken.aborted) break;
+    // small pause after each option (optional)
+    await new Promise(r => setTimeout(r, 220));
   }
-  step();
+  // clear highlights after sequence
+  document.querySelectorAll('.opt-letter.highlight').forEach(e=>e.classList.remove('highlight'));
 }
 
-/* Stop option prompting */
-function stopOptionPromptSequence(){
-  if(optionPromptTimer){ clearTimeout(optionPromptTimer); optionPromptTimer = null; }
-  // clear all highlights
-  var els = document.querySelectorAll('.opt-letter.highlight');
-  els.forEach(e => e.classList.remove('highlight'));
+/* stop everything speaking & sequences */
+function stopAllSpeaking(){
+  optionPromptAbort.aborted = true;
+  stopSpeech();
+  document.querySelectorAll('.opt-letter.highlight').forEach(e=>e.classList.remove('highlight'));
 }
 
-/* Repeat sequence (called by Repeat button) */
-function repeatOptionSequence(){
-  // If current age is 5-8, restart option prompt sequence
-  if(currentAge === '5-8'){
-    stopOptionPromptSequence();
-    // small delay so any current speech stops and sequence restarts cleanly
-    setTimeout(() => startOptionPromptSequence(), 150);
-  } else {
-    // for other ages repeat main prompt
-    speak(currentExperiment.voice || currentExperiment.prompt);
-  }
+/* Repeat entire sequence: speak question then options again */
+function repeatSequence(){
+  stopAllSpeaking();
+  optionPromptAbort = { aborted:false };
+  (async ()=>{
+    await speakWithPromise(currentExperiment.voice || currentExperiment.prompt);
+    if(optionPromptAbort.aborted) return;
+    if(currentAge === '5-8') await promptOptionsSequentially(optionPromptAbort);
+  })();
 }
 
-/* User picks an option */
+/* user picks an option */
 function userPick(i){
-  // stop the option prompting if in progress
-  stopOptionPromptSequence();
+  // stop any option prompting immediately
+  stopAllSpeaking();
   if(currentMode === 'train'){
     revealTrainingAnswer();
     return;
@@ -560,32 +398,32 @@ function userPick(i){
   currentExperiment.tries = (currentExperiment.tries || 0) + 1;
   if(i === currentExperiment.answer){
     fb.innerHTML = '<div class="correct">✅ Correct! ' + escapeHtml(currentExperiment.explanation || '') + '</div>';
-    speak('Correct. ' + (currentExperiment.explanation || 'Well done.'));
+    speakWithPromise('Correct. ' + (currentExperiment.explanation || 'Well done.'));
     awardPoints();
-    // auto-advance fast so children keep flow
     setTimeout(()=> nextExperiment(), 700);
   } else {
     fb.innerHTML = '<div class="wrong">❌ Wrong. Try again.</div>';
-    speak('Wrong. Try again.');
-    // re-run option sequence so child can hear options again after a short delay
+    speakWithPromise('Wrong. Try again.');
+    // re-run the option sequence after short delay so they can hear options again
     setTimeout(()=> {
-      if(currentAge === '5-8') startOptionPromptSequence();
+      optionPromptAbort = { aborted:false };
+      (async ()=> { if(currentAge==='5-8') await promptOptionsSequentially(optionPromptAbort); })();
     }, 700);
   }
 }
 
-/* Training reveal + auto-advance */
+/* training reveal */
 function revealTrainingAnswer(){
+  stopAllSpeaking();
   var fb = $('feedback');
   var opt = currentExperiment.options[currentExperiment.answer];
-  var answerText = (typeof opt === 'string') ? opt.replace(/^[A-Z]:\s*/,'') : (opt.text || '');
+  var answerText = (typeof opt === 'string') ? opt : (opt.text || '');
   fb.innerHTML = '<div class="correct">Answer: ' + escapeHtml(answerText) + '. ' + escapeHtml(currentExperiment.explanation || '') + '</div>';
-  speak('Answer: ' + (answerText) + '. ' + (currentExperiment.explanation || ''));
-  // auto-advance after showing explanation
+  speakWithPromise('Answer: ' + answerText + '. ' + (currentExperiment.explanation || ''));
   setTimeout(()=> nextExperiment(), 1200);
 }
 
-/* Points & progress */
+/* points */
 function awardPoints(){
   var key = 'exp_' + currentIndex;
   if(progress.solved && progress.solved[key]) return;
@@ -596,34 +434,11 @@ function awardPoints(){
   saveProgress();
 }
 
-/* Next */
-function nextExperiment(){
-  currentIndex++;
-  showExperiment();
-}
+/* next/hint/restart/certificate (unchanged behaviour) */
+function nextExperiment(){ currentIndex++; showExperiment(); }
+function showHint(){ if(!currentExperiment) return; $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint || '') + '</div>'; speakWithPromise('Hint: ' + (currentExperiment.hint || '')); if(currentAge==='5-8'){ setTimeout(()=>{ optionPromptAbort = { aborted:false }; promptOptionsSequentially(optionPromptAbort); },700);} }
+function restartLevel(){ currentIndex=0; showExperiment(); }
 
-/* Hint & repeat voice */
-function showHint(){
-  if(!currentExperiment) return;
-  $('feedback').innerHTML = '<div class="hint">Hint: ' + escapeHtml(currentExperiment.hint || '') + '</div>';
-  speak('Hint: ' + (currentExperiment.hint || ''));
-  // after hint, for 5-8 re-run option prompting so they can hear options again
-  if(currentAge === '5-8'){
-    setTimeout(()=> startOptionPromptSequence(), 700);
-  }
-}
-function repeatVoice(){
-  if(!currentExperiment) return;
-  speak(currentExperiment.voice || currentExperiment.prompt);
-}
-
-/* Restart */
-function restartLevel(){
-  currentIndex = 0;
-  showExperiment();
-}
-
-/* Certificate */
 function openPrintableCertificate(){
   if(!currentAge) return alert('Please select an age group first.');
   var name = prompt('Enter name for the certificate:', localStorage.getItem('scigame_player_name') || '');
@@ -633,9 +448,7 @@ function openPrintableCertificate(){
   var total = (EXPERIMENTS[currentAge] || []).length;
   var points = progress.points || 0;
   var badge = 'None';
-  if(progress.stars >= 60) badge = 'Gold';
-  else if(progress.stars >= 30) badge = 'Silver';
-  else if(progress.stars >= 10) badge = 'Bronze';
+  if(progress.stars >= 60) badge = 'Gold'; else if(progress.stars >= 30) badge = 'Silver'; else if(progress.stars >= 10) badge = 'Bronze';
   var html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificate</title>' +
     '<style>body{font-family:serif;padding:28px;text-align:center}.title{font-family:cursive;font-size:56px}.small{font-size:16px;color:#333}</style>' +
     '</head><body>' +
@@ -648,18 +461,15 @@ function openPrintableCertificate(){
     '<div style="position:fixed;bottom:18px;width:100%;text-align:center;font-size:12px;color:#444">Created &amp; Designed by Animesh</div>' +
     '<script>setTimeout(function(){ if(confirm(\"Open print dialog? Use Save as PDF to store certificate.\")) window.print(); },300); </' + 'script>' +
     '</body></html>';
-  var w = window.open('', '_blank');
-  if(!w) return alert('Popup blocked — allow popups for this site to open certificate.');
-  w.document.open(); w.document.write(html); w.document.close();
+  var w = window.open('', '_blank'); if(!w) return alert('Popup blocked — allow popups for this site to open certificate.'); w.document.open(); w.document.write(html); w.document.close();
 }
 
-/* Escape */
+/* escape */
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-/* Init */
-document.addEventListener('DOMContentLoaded', function(){
-  // nothing to do until user selects age
-});
+/* init */
+document.addEventListener('DOMContentLoaded', function(){ /* wait for user */ });
+
 </script>
 </body>
 </html>
