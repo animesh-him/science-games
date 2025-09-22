@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Science Experiments Game — All-in-One</title>
+  <style>
+    /* ---------- Basic UI ---------- */
+    :root{
+      --bg:#f6fbff; --card:#ffffff; --accent:#1766a0; --muted:#666;
+      --success:#178a3b; --danger:#c92a2a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; background:var(--bg); color:#04263f}
+    header{padding:28px;text-align:center}
+    header h1{margin:0;font-size:30px}
+    header p{margin:6px 0;color:var(--muted)}
+    .wrap{max-width:1100px;margin:22px auto;padding:12px}
+    .tiles{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+    .tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 28px;background:var(--card);border-radius:12px;box-shadow:0 8px 18px rgba(10,20,40,0.06);text-decoration:none;color:inherit;font-weight:700;min-width:180px;cursor:pointer}
+    .tile small{font-weight:500;color:var(--muted);font-size:13px;margin-top:6px}
+    .hub{display:flex;gap:18px;align-items:flex-start}
+    .left, .right{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 18px rgba(10,20,40,0.04)}
+    .left{flex:1}
+    .right{width:340px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    button{cursor:pointer;border:1px solid rgba(10,20,40,0.08);background:white;padding:8px 12px;border-radius:8px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px}
+    .card{padding:10px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+    .card .exp-title{font-weight:600}
+    .small{font-size:13px;color:var(--muted)}
+    footer{padding:18px;text-align:center;color:var(--muted);font-size:12px}
+    .footer-credit{font-size:11px;color:#666;margin-top:12px;text-align:center}
+
+    /* ---------- Modal / Experiment ---------- */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:60}
+    .modal.hidden{display:none}
+    .modal-card{background:white;border-radius:12px;padding:16px;max-width:920px;width:94%;max-height:88vh;overflow:auto;box-shadow:0 20px 40px rgba(2,8,23,0.35)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center}
+    .close-btn{background:transparent;border:none;font-size:20px;cursor:pointer}
+    .question{margin-top:12px;font-size:18px}
+    .options{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    .opt-btn{padding:10px 12px;border-radius:10px;border:1px solid #e3eef9;background:linear-gradient(#fff,#f7fbff);min-width:110px}
+    .opt-btn:focus{outline:2px solid #cfe9ff}
+    #feedback{margin-top:12px;min-height:28px;font-weight:600}
+    .correct{color:var(--success)}
+    .wrong{color:var(--danger)}
+    .hint{color:#6b4b00;background:#fff7cc;padding:8px;border-radius:8px}
+
+    /* ---------- Animated pipe (example) ---------- */
+    .pipe-wrap{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px}
+    .pipe{
+      width:220px;height:80px;border-radius:14px;background:linear-gradient(#cfe9ff,#e7f5ff);
+      position:relative;overflow:hidden;border:4px solid #b6e0ff;box-shadow:inset 0 6px 14px rgba(0,0,0,0.06)
+    }
+    .water{position:absolute;left:0;bottom:0;height:0%;width:100%;background:linear-gradient(#98d8ff,#66c7ff);transition:height 1.6s ease}
+    .block{position:absolute;left:40%;top:18px;width:28px;height:44px;background:#c44;border-radius:6px;transform:skewX(-8deg)}
+    .flowing{animation:flow 1.25s linear infinite}
+    @keyframes flow{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+
+    /* ---------- stars / badges ---------- */
+    .status{padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #e3f2ff;margin-bottom:10px}
+    .stars{font-weight:700;color:#f5b400}
+
+    /* ---------- certificate preview ---------- */
+    .cert-preview{border:1px dashed #ddd;padding:12px;border-radius:8px;background:#fff}
+
+    /* ---------- responsive ---------- */
+    @media (max-width:800px){
+      .hub{flex-direction:column}
+      .right{width:auto}
+    }
+
+  </style>
+  <!-- html2canvas and jsPDF for PDF export (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="" crossorigin="anonymous" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Science Experiments Game</h1>
+    <p>Choose your age group — Voice prompts, Training mode, and Certificates included</p>
+  </header>
+
+  <div class="wrap">
+    <div class="tiles" id="age-tiles">
+      <div class="tile" data-age="5-8"><div>Age 5–8</div><small>Beginner experiments</small></div>
+      <div class="tile" data-age="8-14"><div>Age 8–14</div><small>Applied &amp; curious</small></div>
+      <div class="tile" data-age="14+"><div>Age 14+</div><small>Concept &amp; reasoning</small></div>
+    </div>
+
+    <div id="hub" class="hub" style="display:none">
+      <div class="left">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div>
+            <h2 id="hub-title">Age 5–8</h2>
+            <div id="progress-display" class="small">Loading...</div>
+          </div>
+          <div>
+            <div class="controls">
+              <button id="play-mode-btn">Play Mode</button>
+              <button id="train-mode-btn">Training Mode</button>
+              <button id="reset-btn">Reset Progress</button>
+            </div>
+            <div style="margin-top:6px">
+              <button id="certificate-btn">Generate Certificate</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="status" id="status-bar">
+          <div class="small">Points: <span id="pts">0</span> • Stars: <span id="stars">0</span> • <span id="badges">No badge yet</span></div>
+        </div>
+
+        <div id="experiments-grid" class="grid" aria-live="polite"></div>
+
+      </div>
+
+      <aside class="right">
+        <div style="margin-bottom:12px">
+          <strong>Mode</strong>
+          <div class="small">Play mode — you figure out the answer. Training mode — answers & explanations shown.</div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <strong>Certificate Preview</strong>
+          <div class="cert-preview small" id="cert-preview">
+            <div style="text-align:center"><div style="font-family:cursive;font-size:34px">Certificate</div>
+              <div style="font-size:14px;margin-top:6px">Science Experiment Games</div>
+            </div>
+            <div style="margin-top:12px">Name: <span id="cert-name">—</span></div>
+            <div>Score: <span id="cert-score">—</span></div>
+            <div style="margin-top:10px;font-size:11px;color:#444">Created &amp; Designed by Animesh</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <strong>Controls</strong>
+          <div class="small" style="margin-top:6px">
+            • Click an experiment card to open it.<br>
+            • Use the Repeat &amp; Hint buttons in the experiment modal.<br>
+            • Voice prompts use your browser's speech synthesis.<br>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer>
+    Created &amp; Designed by Animesh
+  </footer>
+
+  <!-- Modal for experiments -->
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card" role="document">
+      <div class="modal-header">
+        <div>
+          <strong id="modal-title">Experiment</strong>
+          <div id="modal-sub" class="small"></div>
+        </div>
+        <div>
+          <button class="close-btn" id="close-modal" title="Close">✕</button>
+        </div>
+      </div>
+
+      <div id="modal-body">
+        <!-- question + visuals injected here -->
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="repeat-voice">🔁 Repeat</button>
+        <button id="hint-btn">💡 Hint</button>
+        <button id="next-btn" style="display:none">➡ Next</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+  Embedded experiments data
+  (20 items per group) — taken from your approved spec
+------------------------- */
+const EXPERIMENTS = {
+  "5-8": [
+    {"prompt":"Which object will float on water?","options":["Rock","Piece of wood","Coin"],"answer":1,"hint":"Light and less dense than water","explanation":"Wood is less dense than water so it floats.","voice":"Which object will float on water?"},
+    {"prompt":"Which pipe will fill the bucket? (Left or Right)","options":["Left path","Right path"],"answer":1,"hint":"Look where the blockage is and which path leads directly to the bucket","explanation":"The right path is open to the bucket.","voice":"Which pipe will fill the bucket, left or right?"},
+    {"prompt":"Which melts faster: ice in the sun or ice in the shade?","options":["Sun","Shade"],"answer":0,"hint":"Think where it is warmer","explanation":"Ice melts faster in the sun because it is warmer.","voice":"Which melts faster: ice in the sun or ice in the shade?"},
+    {"prompt":"Which object will make a bigger shadow under the same light?","options":["Tall tree","Small plant","Feather"],"answer":0,"hint":"Bigger objects cast bigger shadows","explanation":"The tall tree blocks more light so its shadow is larger.","voice":"Which object will make a bigger shadow under the same light?"},
+    {"prompt":"What color do you get when you mix red and blue?","options":["Purple","Green","Orange"],"answer":0,"hint":"Red + Blue = ?","explanation":"Mixing red and blue produces purple.","voice":"What color do you get when you mix red and blue?"},
+    {"prompt":"Which animal lives in water?","options":["Fish","Dog","Bird"],"answer":0,"hint":"This animal breathes underwater with gills","explanation":"Fish live in water and have gills.","voice":"Which animal lives in water?"},
+    {"prompt":"Which object will stick to a magnet?","options":["Paper clip","Balloon","Cork"],"answer":0,"hint":"Look for metal objects","explanation":"A paper clip is metal and will stick to a magnet.","voice":"Which object will stick to a magnet?"},
+    {"prompt":"Which does a plant need to grow?","options":["Sunlight","Candy","Video games"],"answer":0,"hint":"Plants get energy from the sun","explanation":"Plants need sunlight, water, and soil to grow.","voice":"Which does a plant need to grow?"},
+    {"prompt":"Which is a push action?","options":["Opening a door by pulling","Kicking a ball","Picking up a cup"],"answer":1,"hint":"Pushing moves something away from you","explanation":"Kicking a ball is a push action.","voice":"Which is a push action?"},
+    {"prompt":"Which will float: a sealed plastic bottle or a heavy metal spoon?","options":["Plastic bottle","Metal spoon","Both"],"answer":0,"hint":"Think about weight and air inside","explanation":"A sealed plastic bottle traps air and will float.","voice":"Which will float, a sealed plastic bottle or a heavy metal spoon?"},
+    {"prompt":"Which material is used to make a shadow puppet?","options":["Paper","Glass","Water"],"answer":0,"hint":"It must block light and be easy to cut","explanation":"Paper blocks light and is easy to shape for puppets.","voice":"Which material is used to make a shadow puppet?"},
+    {"prompt":"Which object is magnetic?","options":["Wooden spoon","Iron key","Plastic toy"],"answer":1,"hint":"Made of metal like iron","explanation":"Iron key is magnetic.","voice":"Which object is magnetic?"},
+    {"prompt":"Which will sink in water?","options":["Stone","Cork","Soap"],"answer":0,"hint":"Heavy and dense objects sink","explanation":"Stone is denser than water so it sinks.","voice":"Which will sink in water?"},
+    {"prompt":"What does a thermometer measure?","options":["Temperature","Speed","Color"],"answer":0,"hint":"Use to know if you have a fever","explanation":"A thermometer measures temperature.","voice":"What does a thermometer measure?"},
+    {"prompt":"Which helps a boat float more: more weight or larger surface area?","options":["More weight","Larger surface area","Softer material"],"answer":1,"hint":"Think about how spreading weight helps","explanation":"Larger surface area spreads the weight and helps buoyancy.","voice":"Which helps a boat float more: more weight or larger surface area?"},
+    {"prompt":"Which object will roll easily?","options":["Ball","Block","Sheet of paper"],"answer":0,"hint":"Round objects roll","explanation":"A ball is round and rolls easily.","voice":"Which object will roll easily?"},
+    {"prompt":"Which season do leaves usually fall?","options":["Autumn","Summer","Spring"],"answer":0,"hint":"When trees prepare for winter","explanation":"Leaves commonly fall during autumn.","voice":"Which season do leaves usually fall?"},
+    {"prompt":"Which light source is the hottest?","options":["Sun","Candle","Lamp"],"answer":0,"hint":"What keeps us warm during daytime?","explanation":"The Sun is much hotter than a candle or lamp.","voice":"Which light source is the hottest?"},
+    {"prompt":"Which will fill with air when you blow into it?","options":["Balloon","Stone","Cup"],"answer":0,"hint":"It inflates when you blow air","explanation":"A balloon fills up when air is blown into it.","voice":"Which will fill with air when you blow into it?"}
+  ],
+  "8-14": [
+    {"prompt":"Which simple circuit will light the bulb?","options":["Battery + Wire + Bulb (complete loop)","Battery + Bulb (no wire)","Wire + bulb (no battery)"],"answer":0,"hint":"You need a power source and a complete loop","explanation":"A battery and a complete loop of wire allow current to flow to light the bulb.","voice":"Which simple circuit will light the bulb?"},
+    {"prompt":"Which is a lever that makes lifting easier?","options":["Long stick under a rock (fulcrum near rock)","Short stick directly under rock","No stick"],"answer":0,"hint":"Longer arms make levers easier","explanation":"A longer lever arm reduces force needed.","voice":"Which is a lever that makes lifting easier?"},
+    {"prompt":"Which material transmits sound fastest?","options":["Air","Water","Steel"],"answer":2,"hint":"Sound travels faster in solids than in liquids or gases","explanation":"Sound travels fastest in steel among these.","voice":"Which material transmits sound fastest?"},
+    {"prompt":"Which shape has the least air resistance when falling?","options":["Flat sheet","Streamlined object","Parachute"],"answer":1,"hint":"Which one is built for low drag?","explanation":"A streamlined shape reduces air resistance.","voice":"Which shape has the least air resistance when falling?"},
+    {"prompt":"Which option shows potential energy converting to kinetic energy?","options":["Ball at top rolling down","Ball at rest on table","Ball pushed and held"],"answer":0,"hint":"Energy changes when it moves downwards","explanation":"Potential energy converts to kinetic as it rolls down.","voice":"Which option shows potential energy converting to kinetic energy?"},
+    {"prompt":"Which liquid will evaporate fastest at room temperature?","options":["Water","Honey","Vegetable oil"],"answer":0,"hint":"Thin liquids with higher vapor pressure evaporate faster","explanation":"Water evaporates faster than viscous liquids like honey or oil.","voice":"Which liquid will evaporate fastest at room temperature?"},
+    {"prompt":"Which lens makes distant objects appear smaller?","options":["Convex","Concave","Plano"],"answer":1,"hint":"One type diverges light","explanation":"A concave lens diverges light and makes images appear smaller.","voice":"Which lens makes distant objects appear smaller?"},
+    {"prompt":"Which soil type drains water fastest?","options":["Sand","Clay","Loam"],"answer":0,"hint":"Grain size affects drainage","explanation":"Sand has large particles and drains quickly.","voice":"Which soil type drains water fastest?"},
+    {"prompt":"Which produces static electricity?","options":["Rubbing balloon on hair","Putting balloon in water","Freezing balloon"],"answer":0,"hint":"Friction can transfer electrons","explanation":"Rubbing the balloon transfers charge and produces static.","voice":"Which action produces static electricity?"},
+    {"prompt":"Why does a metal spoon get hot in hot soup?","options":["Conduction","Convection","Radiation"],"answer":0,"hint":"Heat moves through contact in this case","explanation":"Heat transfers through conduction along the metal.","voice":"Why does a metal spoon get hot in hot soup?"},
+    {"prompt":"Which is an example of chemical change?","options":["Paper burning","Ice melting","Salt dissolving"],"answer":0,"hint":"Look for new substances being formed","explanation":"Burning paper changes it chemically into ash and gases.","voice":"Which is an example of a chemical change?"},
+    {"prompt":"What does pH measure?","options":["Acidity or basicity","Temperature","Density"],"answer":0,"hint":"Used to test acids and bases","explanation":"pH indicates how acidic or basic a solution is.","voice":"What does pH measure?"},
+    {"prompt":"Which device measures electrical current?","options":["Ammeter","Thermometer","Barometer"],"answer":0,"hint":"Think amps for current","explanation":"An ammeter measures current in amperes.","voice":"Which device measures electrical current?"},
+    {"prompt":"Which structure carries oxygen in blood?","options":["Red blood cells","White blood cells","Platelets"],"answer":0,"hint":"These cells contain hemoglobin","explanation":"Red blood cells carry oxygen using hemoglobin.","voice":"Which structure carries oxygen in blood?"},
+    {"prompt":"Which best explains why oil floats on water?","options":["Oil is less dense than water","Oil is more dense than water","They mix evenly"],"answer":0,"hint":"Think which liquid floats on the other","explanation":"Oil floats because it is less dense than water.","voice":"Which best explains why oil floats on water?"},
+    {"prompt":"Which instrument measures atmospheric pressure?","options":["Barometer","Hygrometer","Anemometer"],"answer":0,"hint":"Used in weather forecasts","explanation":"A barometer measures air pressure.","voice":"Which instrument measures atmospheric pressure?"},
+    {"prompt":"Which form of energy is stored in food?","options":["Chemical energy","Nuclear energy","Light energy"],"answer":0,"hint":"Our bodies break food to release this energy","explanation":"Food stores chemical energy.","voice":"Which form of energy is stored in food?"}
+  ],
+  "14+": [
+    {"prompt":"Which circuit configuration will cause a short circuit?","options":["Battery terminals connected directly by a wire","Resistor in series with lamp","Proper circuit with switch"],"answer":0,"hint":"Short circuit bypasses the load","explanation":"Directly connecting battery terminals causes a short causing high current.","voice":"Which circuit configuration will cause a short circuit?"},
+    {"prompt":"Which scenario best describes the greenhouse effect?","options":["Earth traps heat from the Sun due to greenhouse gases","Sun getting closer to Earth","More clouds always cool the planet"],"answer":0,"hint":"Think about gases trapping infrared radiation","explanation":"Greenhouse gases trap outgoing heat and warm the planet.","voice":"Which scenario best describes the greenhouse effect?"},
+    {"prompt":"Which optical phenomenon bends light at an interface?","options":["Refraction","Reflection","Diffraction"],"answer":0,"hint":"Light changes direction entering a new medium","explanation":"Refraction is bending of light when it passes between media.","voice":"Which optical phenomenon bends light at an interface?"},
+    {"prompt":"Which formula represents conservation of mechanical energy?","options":["KE_initial + PE_initial = KE_final + PE_final","Force = mass × acceleration","Pressure = force / area"],"answer":0,"hint":"Total mechanical energy remains constant","explanation":"Mechanical energy (kinetic + potential) remains conserved without non-conservative forces.","voice":"Which formula represents conservation of mechanical energy?"},
+    {"prompt":"Which gas contributes to acid rain?","options":["Sulfur dioxide","Nitrogen gas","Oxygen"],"answer":0,"hint":"Emitted by burning fossil fuels and power plants","explanation":"SO2 reacts to form sulfuric acid in the atmosphere.","voice":"Which gas contributes to acid rain?"},
+    {"prompt":"Which best describes an exothermic reaction?","options":["Releases heat","Absorbs heat","No temperature change"],"answer":0,"hint":"Temperature rises during the reaction","explanation":"Exothermic reactions release energy to surroundings.","voice":"Which best describes an exothermic reaction?"},
+    {"prompt":"Which biomolecule stores genetic information?","options":["DNA","Carbohydrate","Lipid"],"answer":0,"hint":"Found in the nucleus of cells","explanation":"DNA stores hereditary information.","voice":"Which biomolecule stores genetic information?"},
+    {"prompt":"Which method is best for separating a soluble solid from a liquid?","options":["Evaporation","Filtration","Magnetic separation"],"answer":0,"hint":"Remove the liquid to leave the solid","explanation":"Evaporation leaves the dissolved solid behind.","voice":"Which method separates a soluble solid from a liquid?"},
+    {"prompt":"Why do metals conduct electricity?","options":["Free electrons move through the lattice","Ionic bonds break","They contain water"],"answer":0,"hint":"Think free charges moving","explanation":"Metals have delocalized electrons that carry current.","voice":"Why do metals conduct electricity?"},
+    {"prompt":"Which process produces biodegradable waste decomposition?","options":["Microbial activity","Burning","Plastics"],"answer":0,"hint":"Living organisms break down organic matter","explanation":"Microbes decompose organic waste into simpler substances.","voice":"Which process produces biodegradation of waste?"},
+    {"prompt":"Which unit measures electric charge?","options":["Coulomb","Watt","Newton"],"answer":0,"hint":"Symbol is C","explanation":"Charge is measured in coulombs.","voice":"Which unit measures electric charge?"},
+    {"prompt":"Which describes nuclear fusion?","options":["Combining light nuclei to form heavier ones","Splitting heavy nuclei","Chemical bonding"],"answer":0,"hint":"What powers the Sun?","explanation":"Fusion combines nuclei and releases large energy.","voice":"Which describes nuclear fusion?"},
+    {"prompt":"Which law states F = ma?","options":["Newton's Second Law","Law of Conservation of Energy","Ohm's Law"],"answer":0,"hint":"Force equals mass times acceleration","explanation":"This is Newton's second law.","voice":"Which law states force equals mass times acceleration?"},
+    {"prompt":"Which process forms sedimentary rocks?","options":["Compaction and cementation of sediments","Melting and cooling","Metamorphism"],"answer":0,"hint":"Layers build up over time","explanation":"Sedimentary rocks form from deposited sediments.","voice":"Which process forms sedimentary rocks?"},
+    {"prompt":"Which property does not change during a physical change?","options":["Chemical composition","Shape","Phase"],"answer":0,"hint":"Look for the identity of the substance","explanation":"In physical changes the chemical composition remains the same.","voice":"Which property does not change during a physical change?"},
+    {"prompt":"Which process regulates blood glucose in humans?","options":["Insulin and glucagon hormones","Photosynthesis","Respiration only"],"answer":0,"hint":"Pancreas secretes it","explanation":"Insulin lowers and glucagon raises blood glucose.","voice":"Which process regulates blood glucose in humans?"}
+  ]
+};
+
+/* -------------------------
+  App logic: UI, voice, storage
+------------------------- */
+const App = (function(){
+  const storageKeyPrefix = 'scigame_v1_';
+  let age = null;
+  let mode = 'play'; // 'play' or 'train'
+  let progress = {};
+  let current = { idx:null, tries:0, usedHint:false, answered:false };
+
+  // DOM refs
+  const tiles = document.getElementById('age-tiles');
+  const hub = document.getElementById('hub');
+  const hubTitle = document.getElementById('hub-title');
+  const grid = document.getElementById('experiments-grid');
+  const progressDisplay = document.getElementById('progress-display');
+  const ptsEl = document.getElementById('pts');
+  const starsEl = document.getElementById('stars');
+  const badgesEl = document.getElementById('badges');
+  const certNameEl = document.getElementById('cert-name');
+  const certScoreEl = document.getElementById('cert-score');
+
+  // modal
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+  const modalTitle = document.getElementById('modal-title');
+  const modalSub = document.getElementById('modal-sub');
+  const closeModalBtn = document.getElementById('close-modal');
+  const repeatVoiceBtn = document.getElementById('repeat-voice');
+  const hintBtn = document.getElementById('hint-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  // scoring rules
+  const SCORING = { firstTry:10, hint:7, later:4 };
+
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    } catch(e) { console.warn('speak error', e) }
+  }
+
+  function storageKeyFor(ageGroup){
+    return storageKeyPrefix + 'progress_' + ageGroup;
+  }
+
+  function ensureProgress(){
+    const key = storageKeyFor(age);
+    const raw = localStorage.getItem(key);
+    if(raw) progress = JSON.parse(raw);
+    else {
+      progress = { points:0, stars:0, solved:{} };
+      localStorage.setItem(key, JSON.stringify(progress));
+    }
+  }
+
+  function saveProgress(){
+    localStorage.setItem(storageKeyFor(age), JSON.stringify(progress));
+    updateUIProgress();
+  }
+
+  function updateUIProgress(){
+    const total = EXPERIMENTS[age].length;
+    const solvedCount = Object.keys(progress.solved||{}).length;
+    progressDisplay.textContent = `Solved ${solvedCount} / ${total}`;
+    ptsEl.textContent = progress.points || 0;
+    starsEl.textContent = progress.stars || 0;
+    // badges
+    let badge = 'No badge yet';
+    if((progress.stars||0) >= 60) badge = 'Gold';
+    else if((progress.stars||0) >= 30) badge = 'Silver';
+    else if((progress.stars||0) >= 10) badge = 'Bronze';
+    badgesEl.textContent = badge;
+    certNameEl.textContent = (localStorage.getItem(storageKeyPrefix + 'player_name') || '—');
+    certScoreEl.textContent = `${progress.points||0} pts`;
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    const list = EXPERIMENTS[age] || [];
+    list.forEach((exp, idx) => {
+      const card = document.createElement('div'); card.className='card';
+      card.innerHTML = `<div class="exp-title">Experiment ${idx+1}</div>
+                        <div class="small">${exp.prompt}</div>
+                        <div style="margin-top:8px"><button data-idx="${idx}">Start</button></div>`;
+      grid.appendChild(card);
+    });
+
+    // attach listeners to Start buttons
+    grid.querySelectorAll('button[data-idx]').forEach(b=>{
+      b.addEventListener('click', (e)=>{
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'),10);
+        openExperiment(idx);
+      });
+    });
+  }
+
+  function openExperiment(idx){
+    current.idx = idx; current.tries = 0; current.usedHint = false; current.answered = false;
+    const exp = EXPERIMENTS[age][idx];
+    modalTitle.textContent = `Experiment ${idx+1}`;
+    modalSub.textContent = (mode === 'train') ? 'Training mode — answer shown & explained' : 'Play mode';
+    modalBody.innerHTML = ''; nextBtn.style.display='none'; // reset
+
+    // Question text
+    const qDiv = document.createElement('div'); qDiv.className='question';
+    qDiv.innerHTML = `<strong>${escapeHtml(exp.prompt)}</strong>`;
+    modalBody.appendChild(qDiv);
+
+    // If this is the pipe experiment (detect certain prompt), show animated pipe SVG
+    if(/pipe/i.test(exp.prompt)){
+      const pipeWrap = document.createElement('div'); pipeWrap.className='pipe-wrap';
+      pipeWrap.innerHTML = `
+        <div class="pipe" aria-hidden="true">
+          <div class="water" id="water-level" style="height:20%"></div>
+          <div class="block" id="block"></div>
+        </div>
+      `;
+      modalBody.appendChild(pipeWrap);
+      // in training, show which side opens by animating water
+      if(mode === 'train'){
+        document.getElementById('water-level').style.height = '70%';
+        document.getElementById('block').style.left = exp.answer === 0 ? '70%' : '30%';
+      } else {
+        // reset small
+        document.getElementById('water-level').style.height = '20%';
+        document.getElementById('block').style.left = '40%';
+      }
+    }
+
+    // options
+    const opts = document.createElement('div'); opts.className = 'options';
+    exp.options.forEach((opt, i)=>{
+      const b = document.createElement('button'); b.className='opt-btn';
+      b.textContent = opt; b.setAttribute('data-i', i);
+      b.addEventListener('click', ()=> chooseOption(i));
+      opts.appendChild(b);
+    });
+    modalBody.appendChild(opts);
+
+    // feedback area
+    const fb = document.createElement('div'); fb.id='feedback'; modalBody.appendChild(fb);
+
+    // If training, highlight correct option and show explanation & voice
+    if(mode === 'train'){
+      const corrIndex = exp.answer;
+      // highlight by styling
+      const btns = opts.querySelectorAll('.opt-btn');
+      btns.forEach((bb,ii)=>{
+        if(ii === corrIndex) bb.style.border = '2px solid #8ee08e';
+      });
+      fb.innerHTML = `<div class="correct">Answer: ${escapeHtml(exp.options[corrIndex])}. ${escapeHtml(exp.explanation)}</div>`;
+      speak(exp.voice || exp.prompt + '. Answer: ' + exp.options[corrIndex] + '. ' + exp.explanation);
+      nextBtn.style.display = 'inline-block';
+    } else {
+      // play mode — speak the question
+      speak(exp.voice || exp.prompt);
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeModal(){
+    modal.classList.add('hidden'); modalBody.innerHTML=''; window.speechSynthesis.cancel();
+  }
+
+  function chooseOption(i){
+    if(current.answered) return;
+    current.tries++;
+    const exp = EXPERIMENTS[age][current.idx];
+    const fb = document.getElementById('feedback');
+    if(i === exp.answer){
+      current.answered = true;
+      fb.innerHTML = `<div class="correct">✅ Correct! ${escapeHtml(exp.explanation || '')}</div>`;
+      speak('Correct! Well done.');
+      awardPoints();
+      // small animation for pipe if present
+      const water = document.getElementById('water-level');
+      if(water) water.style.height = '86%';
+      nextBtn.style.display = 'inline-block';
+    } else {
+      fb.innerHTML = `<div class="wrong">❌ Wrong. Try again.</div>`;
+      speak('Wrong. Try again.');
+    }
+  }
+
+  function awardPoints(){
+    const key = 'exp_' + current.idx;
+    if(progress.solved && progress.solved[key]) return; // already awarded
+    let pts = 0;
+    if(current.tries === 1) pts = SCORING.firstTry;
+    else if(current.usedHint) pts = SCORING.hint;
+    else pts = SCORING.later;
+    progress.points = (progress.points || 0) + pts;
+    progress.stars = (progress.stars || 0) + 1;
+    progress.solved[key] = Date.now();
+    saveProgress();
+  }
+
+  // controls
+  function setMode(m){
+    mode = m;
+    document.getElementById('play-mode-btn').style.fontWeight = m==='play' ? '800' : '400';
+    document.getElementById('train-mode-btn').style.fontWeight = m==='train' ? '800' : '400';
+  }
+
+  function resetProgressConfirm(){
+    if(!confirm('Reset progress for this age group?')) return;
+    progress = { points:0, stars:0, solved:{} };
+    saveProgress();
+  }
+
+  // hint & repeat
+  function showHint(){
+    if(current.idx === null) return;
+    if(current.usedHint) return;
+    const exp = EXPERIMENTS[age][current.idx];
+    const fb = document.getElementById('feedback');
+    fb.innerHTML = `<div class="hint">Hint: ${escapeHtml(exp.hint)}</div>`;
+    speak('Hint. ' + exp.hint);
+    current.usedHint = true;
+  }
+  function repeatVoice(){
+    if(current.idx === null) return;
+    const exp = EXPERIMENTS[age][current.idx];
+    speak(exp.voice || exp.prompt);
+  }
+
+  // next experiment button (go to next index in same age)
+  function goNext(){
+    const nextIdx = current.idx + 1;
+    if(nextIdx < EXPERIMENTS[age].length) openExperiment(nextIdx);
+    else { closeModal(); alert('End of set. You can generate a certificate!'); }
+  }
+
+  // certificate generation (one-click PDF)
+  async function generateCertificate(){
+    // ask for name
+    const name = prompt('Enter the name for the certificate (as you want it printed):', localStorage.getItem(storageKeyPrefix + 'player_name') || '');
+    if(!name) return;
+    localStorage.setItem(storageKeyPrefix + 'player_name', name);
+    // prepare certificate element
+    const solved = Object.keys(progress.solved || {}).length;
+    const total = EXPERIMENTS[age].length;
+    const points = progress.points || 0;
+    const badge = badgesEl.textContent;
+
+    const certEl = document.createElement('div');
+    certEl.style.width = '1122px';
+    certEl.style.height = '793px';
+    certEl.style.padding = '48px';
+    certEl.style.boxSizing = 'border-box';
+    certEl.style.fontFamily = 'serif';
+    certEl.style.background = '#fff';
+    certEl.innerHTML = `
+      <div style="text-align:center">
+        <div style="font-family:cursive;font-size:72px">Certificate</div>
+        <div style="font-size:20px;margin-top:6px">Science Experiment Games</div>
+      </div>
+      <div style="margin-top:48px;text-align:center;font-size:16px">This certifies that</div>
+      <div style="margin-top:12px;text-align:center;font-size:36px;font-weight:700">${escapeHtml(name)}</div>
+      <div style="margin-top:18px;text-align:center;font-size:16px">has completed <strong>${solved}</strong> out of <strong>${total}</strong> experiments in the Age <strong>${age}</strong> section, scoring <strong>${points}</strong> points.</div>
+      <div style="margin-top:36px;text-align:center;font-size:14px">Badge: ${badge}</div>
+      <div style="position:absolute;bottom:28px;width:100%;text-align:center;font-size:11px;color:#444">Created &amp; Designed by Animesh</div>
+    `;
+    // append off-DOM for render
+    document.body.appendChild(certEl);
+
+    // wait for html2canvas loaded
+    if(!window.html2canvas || !window.jspdf){
+      alert('PDF libraries are loading. Please try again in a moment (browser will have loaded the helper scripts).');
+      certEl.remove();
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(certEl, { scale: 2, backgroundColor: '#fff' });
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      const filename = `certificate_${name.replace(/\s+/g,'_')}_${age}.pdf`;
+      pdf.save(filename);
+    } catch(err){
+      console.error(err);
+      alert('Failed to generate PDF: ' + err.message);
+    } finally {
+      certEl.remove();
+    }
+  }
+
+  // set up listeners for hub controls
+  function attachHubControls(){
+    document.getElementById('play-mode-btn').addEventListener('click', ()=> setMode('play'));
+    document.getElementById('train-mode-btn').addEventListener('click', ()=> setMode('train'));
+    document.getElementById('reset-btn').addEventListener('click', resetProgressConfirm);
+    document.getElementById('certificate-btn').addEventListener('click', generateCertificate);
+    closeModalBtn.addEventListener('click', closeModal);
+    repeatVoiceBtn.addEventListener('click', repeatVoice);
+    hintBtn.addEventListener('click', showHint);
+    nextBtn.addEventListener('click', goNext);
+    // keyboard: Esc to close
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeModal();
+      if(e.key === 'Enter' && !modal.classList.contains('hidden') && nextBtn.style.display !== 'none') goNext();
+    });
+  }
+
+  /* public init */
+  function init(){
+    // tile clicks to choose age
+    tiles.querySelectorAll('.tile').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        age = t.getAttribute('data-age');
+        hub.style.display = 'flex';
+        hubTitle.textContent = 'Age ' + age;
+        ensureProgress();
+        renderGrid();
+        updateUIProgress();
+        setMode('play');
+        attachHubControls();
+        // show preview name if any
+        document.getElementById('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
+      });
+    });
+  }
+
+  /* helper */
+  function escapeHtml(s){ return (''+s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;', '\"':'&quot;', \"'\":\"&#39;\"}[c])) }
+
+  return { init };
+})();
+
+document.addEventListener('DOMContentLoaded', ()=> App.init() );
+</script>
+</body>
+</html>
