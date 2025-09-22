@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Science Experiments Game — All-in-One (Fixed)</title>
+  <title>Science Experiments Game — Clickable Tiles Fix</title>
   <style>
     :root{
       --bg:#f6fbff; --card:#ffffff; --accent:#1766a0; --muted:#666;
@@ -61,7 +61,7 @@
     }
   </style>
 
-  <!-- PDF helper libraries loaded via CDN (defer so they don't block parsing) -->
+  <!-- PDF helper libraries loaded via CDN (defer) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" defer></script>
 </head>
@@ -72,27 +72,39 @@
   </header>
 
   <div class="wrap">
+    <!-- IMPORTANT: each tile uses inline onclick + onkeydown for robustness -->
     <div class="tiles" id="age-tiles" aria-label="Age groups">
-      <div class="tile" data-age="5-8" tabindex="0" role="button" aria-pressed="false"><div>Age 5–8</div><small>Beginner experiments</small></div>
-      <div class="tile" data-age="8-14" tabindex="0" role="button" aria-pressed="false"><div>Age 8–14</div><small>Applied &amp; curious</small></div>
-      <div class="tile" data-age="14+" tabindex="0" role="button" aria-pressed="false"><div>Age 14+</div><small>Concept &amp; reasoning</small></div>
+      <div class="tile" data-age="5-8" tabindex="0" role="button" aria-pressed="false"
+           onclick="selectAge('5-8', this)" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); selectAge('5-8', this) }">
+        <div>Age 5–8</div><small>Beginner experiments</small>
+      </div>
+
+      <div class="tile" data-age="8-14" tabindex="0" role="button" aria-pressed="false"
+           onclick="selectAge('8-14', this)" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); selectAge('8-14', this) }">
+        <div>Age 8–14</div><small>Applied &amp; curious</small>
+      </div>
+
+      <div class="tile" data-age="14+" tabindex="0" role="button" aria-pressed="false"
+           onclick="selectAge('14+', this)" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); selectAge('14+', this) }">
+        <div>Age 14+</div><small>Concept &amp; reasoning</small>
+      </div>
     </div>
 
     <div id="hub" class="hub" style="display:none" aria-live="polite">
       <div class="left">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div>
-            <h2 id="hub-title">Age 5–8</h2>
+            <h2 id="hub-title">Age</h2>
             <div id="progress-display" class="small">Loading...</div>
           </div>
           <div>
             <div class="controls">
-              <button id="play-mode-btn" aria-pressed="true">Play Mode</button>
-              <button id="train-mode-btn">Training Mode</button>
-              <button id="reset-btn">Reset Progress</button>
+              <button id="play-mode-btn" onclick="setMode('play')">Play Mode</button>
+              <button id="train-mode-btn" onclick="setMode('train')">Training Mode</button>
+              <button id="reset-btn" onclick="resetProgressConfirm()">Reset Progress</button>
             </div>
             <div style="margin-top:6px">
-              <button id="certificate-btn">Generate Certificate</button>
+              <button id="certificate-btn" onclick="generateCertificate()">Generate Certificate</button>
             </div>
           </div>
         </div>
@@ -147,24 +159,22 @@
           <div id="modal-sub" class="small"></div>
         </div>
         <div>
-          <button class="close-btn" id="close-modal" title="Close">✕</button>
+          <button class="close-btn" id="close-modal" onclick="closeModal()" title="Close">✕</button>
         </div>
       </div>
 
       <div id="modal-body"></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button id="repeat-voice">🔁 Repeat</button>
-        <button id="hint-btn">💡 Hint</button>
-        <button id="next-btn" style="display:none">➡ Next</button>
+        <button id="repeat-voice" onclick="repeatVoice()">🔁 Repeat</button>
+        <button id="hint-btn" onclick="showHint()">💡 Hint</button>
+        <button id="next-btn" style="display:none" onclick="goNext()">➡ Next</button>
       </div>
     </div>
   </div>
 
 <script>
-/* -------------------------
-  Embedded experiments data (unchanged)
-------------------------- */
+/* ---- Embedded experiment data (unchanged) ---- */
 const EXPERIMENTS = {
   "5-8": [
     {"prompt":"Which object will float on water?","options":["Rock","Piece of wood","Coin"],"answer":1,"hint":"Light and less dense than water","explanation":"Wood is less dense than water so it floats.","voice":"Which object will float on water?"},
@@ -226,154 +236,148 @@ const EXPERIMENTS = {
   ]
 };
 
-/* -------------------------
-  Robust App initialization and handlers
-------------------------- */
+/* ---- Simple, robust global app (no fragile delegation for tiles) ---- */
 (function(){
   const storageKeyPrefix = 'scigame_v1_';
   let age = null;
   let mode = 'play';
   let progress = {points:0,stars:0,solved:{}};
   let current = {idx:null,tries:0,usedHint:false,answered:false};
-  let controlsAttached = false;
-
-  // DOM references will be set in init (ensures they exist)
-  let tilesEl, hubEl, hubTitle, gridEl, progressDisplay, ptsEl, starsEl, badgesEl;
-  let certNameEl, certScoreEl, modalEl, modalBody, modalTitle, modalSub;
-  let closeModalBtn, repeatVoiceBtn, hintBtn, nextBtn, playBtn, trainBtn, resetBtn, certBtn;
 
   function log(...args){ console.log('[SCI-GAME]', ...args) }
 
+  // DOM refs that we will query the first time needed
+  function $(id){ return document.getElementById(id) }
+
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang='en-US'; window.speechSynthesis.speak(u); } catch(e){ console.warn(e) }
+  }
+
+  // select age called directly from inline onclick
+  window.selectAge = function(selectedAge, tileEl){
+    if(!EXPERIMENTS[selectedAge]) { alert('No experiments for ' + selectedAge); return; }
+    age = selectedAge;
+    // show hub if hidden
+    const hub = $('hub'); hub.style.display = 'flex';
+    $('hub-title').textContent = 'Age ' + age;
+    ensureProgress(); renderGrid(); updateUIProgress();
+    setMode('play');
+    // update preview name
+    $('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
+    // mark pressed state on tiles
+    document.querySelectorAll('.tile').forEach(t=> t.setAttribute('aria-pressed','false'));
+    if(tileEl) tileEl.setAttribute('aria-pressed','true');
+    log('Age selected', age);
+  }
+
+  // progress storage
+  function storageKeyFor(a){ return storageKeyPrefix + 'progress_' + a }
   function ensureProgress(){
+    if(!age) return;
     const key = storageKeyFor(age);
     const raw = localStorage.getItem(key);
     if(raw) progress = JSON.parse(raw);
-    else {
-      progress = { points:0, stars:0, solved:{} };
-      localStorage.setItem(key, JSON.stringify(progress));
-    }
+    else { progress = {points:0,stars:0,solved:{}}; localStorage.setItem(key, JSON.stringify(progress)); }
   }
-  function storageKeyFor(a){ return storageKeyPrefix + 'progress_' + a }
-
-  function saveProgress(){
-    localStorage.setItem(storageKeyFor(age), JSON.stringify(progress));
-    updateUIProgress();
-  }
+  function saveProgress(){ if(!age) return; localStorage.setItem(storageKeyFor(age), JSON.stringify(progress)); updateUIProgress(); }
 
   function updateUIProgress(){
+    if(!age) return;
     const total = (EXPERIMENTS[age]||[]).length;
     const solvedCount = Object.keys(progress.solved||{}).length;
-    progressDisplay.textContent = `Solved ${solvedCount} / ${total}`;
-    ptsEl.textContent = progress.points || 0;
-    starsEl.textContent = progress.stars || 0;
+    $('progress-display').textContent = `Solved ${solvedCount} / ${total}`;
+    $('pts').textContent = progress.points || 0;
+    $('stars').textContent = progress.stars || 0;
     let badge = 'No badge yet';
     if((progress.stars||0) >= 60) badge = 'Gold';
     else if((progress.stars||0) >= 30) badge = 'Silver';
     else if((progress.stars||0) >= 10) badge = 'Bronze';
-    badgesEl.textContent = badge;
-    certNameEl.textContent = (localStorage.getItem(storageKeyPrefix + 'player_name') || '—');
-    certScoreEl.textContent = `${progress.points||0} pts`;
+    $('badges').textContent = badge;
+    $('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
+    $('cert-score').textContent = `${progress.points||0} pts`;
   }
 
-  function speak(text){
-    if(!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
-    } catch(e){ console.warn('speech error', e) }
-  }
-
+  // render grid (called after age selection)
   function renderGrid(){
-    gridEl.innerHTML = '';
+    const grid = $('experiments-grid'); grid.innerHTML = '';
     const list = EXPERIMENTS[age] || [];
-    list.forEach((exp, idx) => {
+    list.forEach((exp, idx)=>{
       const card = document.createElement('div'); card.className='card';
       const solvedKey = 'exp_' + idx;
       const isSolved = !!(progress.solved && progress.solved[solvedKey]);
       card.innerHTML = `<div class="exp-title">Experiment ${idx+1} ${isSolved? '✅' : ''}</div>
                         <div class="small" title="${escapeHtml(exp.prompt)}">${exp.prompt}</div>
-                        <div style="margin-top:8px"><button data-idx="${idx}">Start</button></div>`;
-      gridEl.appendChild(card);
+                        <div style="margin-top:8px"><button onclick="openExperiment(${idx})">Start</button></div>`;
+      grid.appendChild(card);
     });
   }
 
-  function openExperiment(idx){
+  // open experiment (global)
+  window.openExperiment = function(idx){
+    if(typeof idx !== 'number') return;
     current.idx = idx; current.tries = 0; current.usedHint = false; current.answered = false;
     const exp = EXPERIMENTS[age][idx];
-    modalTitle.textContent = `Experiment ${idx+1}`;
-    modalSub.textContent = (mode === 'train') ? 'Training mode — answer shown & explained' : 'Play mode';
-    modalBody.innerHTML = ''; nextBtn.style.display = 'none';
+    $('modal-title').textContent = `Experiment ${idx+1}`;
+    $('modal-sub').textContent = (mode === 'train') ? 'Training mode — answer shown & explained' : 'Play mode';
+    const body = $('modal-body'); body.innerHTML = ''; $('next-btn').style.display='none';
 
-    const qDiv = document.createElement('div'); qDiv.className='question';
-    qDiv.innerHTML = `<strong>${escapeHtml(exp.prompt)}</strong>`;
-    modalBody.appendChild(qDiv);
+    // question text
+    const qDiv = document.createElement('div'); qDiv.className='question'; qDiv.innerHTML = `<strong>${escapeHtml(exp.prompt)}</strong>`;
+    body.appendChild(qDiv);
 
-    // optional animated pipe for pipe prompts
+    // optional pipe animation for pipe prompts
     if(/pipe/i.test(exp.prompt)){
       const pipeWrap = document.createElement('div'); pipeWrap.className='pipe-wrap';
-      pipeWrap.innerHTML = `
-        <div class="pipe" aria-hidden="true">
-          <div class="water" id="water-level" style="height:20%"></div>
-          <div class="block" id="block"></div>
-        </div>`;
-      modalBody.appendChild(pipeWrap);
-      // training shows final state, play reset small height
+      pipeWrap.innerHTML = `<div class="pipe"><div class="water" id="water-level" style="height:20%"></div><div class="block" id="block"></div></div>`;
+      body.appendChild(pipeWrap);
       setTimeout(()=> {
         const w = document.getElementById('water-level'), b = document.getElementById('block');
         if(w) w.style.height = (mode === 'train') ? '75%' : '20%';
         if(b) b.style.left = (mode === 'train') ? (exp.answer===0 ? '70%' : '30%') : '40%';
-      }, 60);
+      }, 50);
     }
 
     // options
     const opts = document.createElement('div'); opts.className='options';
-    exp.options.forEach((opt, i)=>{
-      const b = document.createElement('button'); b.className='opt-btn';
-      b.textContent = opt; b.setAttribute('data-i', i);
-      b.addEventListener('click', ()=> chooseOption(i));
-      opts.appendChild(b);
+    exp.options.forEach((opt,i)=>{
+      const btn = document.createElement('button'); btn.className='opt-btn'; btn.textContent = opt;
+      btn.onclick = ()=> chooseOption(i);
+      opts.appendChild(btn);
     });
-    modalBody.appendChild(opts);
+    body.appendChild(opts);
 
-    const fb = document.createElement('div'); fb.id = 'feedback'; modalBody.appendChild(fb);
+    // feedback
+    const fb = document.createElement('div'); fb.id='feedback'; body.appendChild(fb);
 
-    // training mode shows answer & explanation
+    // training mode shows answer
     if(mode === 'train'){
       const corr = exp.answer;
-      // highlight
-      Array.from(opts.children).forEach((btn,ii)=>{ if(ii===corr) btn.style.border = '2px solid #8ee08e'; });
+      Array.from(opts.children).forEach((b,ii)=>{ if(ii===corr) b.style.border='2px solid #8ee08e'; });
       fb.innerHTML = `<div class="correct">Answer: ${escapeHtml(exp.options[corr])}. ${escapeHtml(exp.explanation)}</div>`;
       speak((exp.voice || exp.prompt) + '. Answer: ' + exp.options[corr] + '. ' + exp.explanation);
-      nextBtn.style.display = 'inline-block';
+      $('next-btn').style.display = 'inline-block';
     } else {
       speak(exp.voice || exp.prompt);
     }
 
-    modalEl.classList.remove('hidden');
+    $('modal').classList.remove('hidden');
   }
 
-  function closeModal(){
-    modalEl.classList.add('hidden');
-    modalBody.innerHTML = '';
-    window.speechSynthesis && window.speechSynthesis.cancel();
-  }
+  window.closeModal = function(){ $('modal').classList.add('hidden'); $('modal-body').innerHTML = ''; window.speechSynthesis && window.speechSynthesis.cancel(); }
 
   function chooseOption(i){
     if(current.answered) return;
     current.tries++;
     const exp = EXPERIMENTS[age][current.idx];
-    const fb = document.getElementById('feedback');
+    const fb = $('feedback');
     if(i === exp.answer){
       current.answered = true;
       fb.innerHTML = `<div class="correct">✅ Correct! ${escapeHtml(exp.explanation || '')}</div>`;
       speak('Correct! Well done.');
       awardPoints();
-      const water = document.getElementById('water-level');
-      if(water) water.style.height = '86%';
-      nextBtn.style.display = 'inline-block';
-      // update grid to show solved mark
+      const water = document.getElementById('water-level'); if(water) water.style.height='86%';
+      $('next-btn').style.display = 'inline-block';
       renderGrid();
     } else {
       fb.innerHTML = `<div class="wrong">❌ Wrong. Try again.</div>`;
@@ -383,41 +387,52 @@ const EXPERIMENTS = {
 
   function awardPoints(){
     const key = 'exp_' + current.idx;
-    if(progress.solved && progress.solved[key]) return; // already awarded
+    if(progress.solved && progress.solved[key]) return;
     let pts = 0;
-    if(current.tries === 1) pts = SCORING.firstTry;
-    else if(current.usedHint) pts = SCORING.hint;
-    else pts = SCORING.later;
+    if(current.tries === 1) pts = 10;
+    else if(current.usedHint) pts = 7;
+    else pts = 4;
     progress.points = (progress.points || 0) + pts;
     progress.stars = (progress.stars || 0) + 1;
     progress.solved[key] = Date.now();
     saveProgress();
   }
 
-  // hint & repeat
-  function showHint(){
+  window.setMode = function(m){ mode = (m==='train') ? 'train' : 'play'; log('Mode set', mode); document.getElementById('play-mode-btn').style.fontWeight = mode==='play' ? '800' : '400'; document.getElementById('train-mode-btn').style.fontWeight = mode==='train' ? '800' : '400'; }
+
+  window.resetProgressConfirm = function(){
+    if(!age) return alert('Select an age group first');
+    if(!confirm('Reset progress for this age group?')) return;
+    progress = {points:0,stars:0,solved:{}};
+    saveProgress(); renderGrid();
+  }
+
+  window.showHint = function(){
     if(current.idx === null) return;
     if(current.usedHint) return;
     const exp = EXPERIMENTS[age][current.idx];
-    const fb = document.getElementById('feedback');
-    fb.innerHTML = `<div class="hint">Hint: ${escapeHtml(exp.hint)}</div>`;
+    $('feedback').innerHTML = `<div class="hint">Hint: ${escapeHtml(exp.hint)}</div>`;
     speak('Hint. ' + exp.hint);
     current.usedHint = true;
   }
-  function repeatVoice(){
+
+  window.repeatVoice = function(){
     if(current.idx === null) return;
     const exp = EXPERIMENTS[age][current.idx];
     speak(exp.voice || exp.prompt);
   }
 
-  function goNext(){
+  window.goNext = function(){
+    if(current.idx === null) return;
     const next = current.idx + 1;
-    if(next < (EXPERIMENTS[age] || []).length) openExperiment(next);
-    else { closeModal(); alert('End of this experiment set — well done! Generate your certificate when ready.'); }
+    if(next < (EXPERIMENTS[age]||[]).length) openExperiment(next);
+    else { closeModal(); alert('End of set — well done!'); }
   }
 
-  async function generateCertificate(){
-    const name = prompt('Enter the name for the certificate (as you want it printed):', localStorage.getItem(storageKeyPrefix + 'player_name') || '');
+  // Certificate / PDF generation
+  window.generateCertificate = async function(){
+    if(!age) return alert('Select an age group first');
+    const name = prompt('Enter name for the certificate:', localStorage.getItem(storageKeyPrefix + 'player_name') || '');
     if(!name) return;
     localStorage.setItem(storageKeyPrefix + 'player_name', name);
     const solved = Object.keys(progress.solved || {}).length;
@@ -425,14 +440,9 @@ const EXPERIMENTS = {
     const points = progress.points || 0;
     const badge = (document.getElementById('badges') || {textContent:'No badge yet'}).textContent;
 
-    // build a certificate element
     const certEl = document.createElement('div');
-    certEl.style.width = '1122px';
-    certEl.style.height = '793px';
-    certEl.style.padding = '48px';
-    certEl.style.boxSizing = 'border-box';
-    certEl.style.fontFamily = 'serif';
-    certEl.style.background = '#fff';
+    certEl.style.width = '1122px'; certEl.style.height = '793px'; certEl.style.padding = '48px'; certEl.style.boxSizing = 'border-box';
+    certEl.style.fontFamily = 'serif'; certEl.style.background = '#fff';
     certEl.innerHTML = `
       <div style="text-align:center">
         <div style="font-family:cursive;font-size:72px">Certificate</div>
@@ -446,11 +456,9 @@ const EXPERIMENTS = {
     `;
     document.body.appendChild(certEl);
 
-    // ensure html2canvas and jspdf are available
     if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
-      alert('PDF libraries are still loading. Please wait a moment and try Generate Certificate again.');
-      certEl.remove();
-      return;
+      alert('PDF libraries still loading. Wait a second and try Generate Certificate again.');
+      certEl.remove(); return;
     }
 
     try {
@@ -462,126 +470,22 @@ const EXPERIMENTS = {
       const filename = `certificate_${name.replace(/\s+/g,'_')}_${age}.pdf`;
       pdf.save(filename);
     } catch(err){
-      console.error('PDF generation error', err);
+      console.error('PDF error', err);
       alert('Failed to generate PDF: ' + (err && err.message ? err.message : err));
     } finally {
       certEl.remove();
     }
   }
 
-  // attach hub controls once
-  function attachControlsOnce(){
-    if(controlsAttached) return;
-    playBtn.addEventListener('click', ()=> setMode('play'));
-    trainBtn.addEventListener('click', ()=> setMode('train'));
-    resetBtn.addEventListener('click', ()=> {
-      if(!confirm('Reset progress for this age group?')) return;
-      progress = {points:0,stars:0,solved:{}};
-      saveProgress();
-      renderGrid();
-    });
-    certBtn.addEventListener('click', generateCertificate);
-    closeModalBtn.addEventListener('click', closeModal);
-    repeatVoiceBtn.addEventListener('click', repeatVoice);
-    hintBtn.addEventListener('click', showHint);
-    nextBtn.addEventListener('click', goNext);
-    controlsAttached = true;
-  }
-
-  function setMode(m){
-    mode = m === 'train' ? 'train' : 'play';
-    playBtn.style.fontWeight = mode==='play' ? '800' : '400';
-    trainBtn.style.fontWeight = mode==='train' ? '800' : '400';
-  }
-
-  // event delegation for tiles and grid buttons
-  function attachTileAndGridHandlers(){
-    // tiles: delegation + keyboard support
-    tilesEl.addEventListener('click', (ev)=>{
-      const tile = ev.target.closest('.tile');
-      if(!tile) return;
-      const selected = tile.getAttribute('data-age');
-      selectAge(selected, tile);
-    });
-    tilesEl.addEventListener('keydown', (ev)=>{
-      const tile = ev.target.closest('.tile');
-      if(!tile) return;
-      if(ev.key === 'Enter' || ev.key === ' '){
-        ev.preventDefault();
-        selectAge(tile.getAttribute('data-age'), tile);
-      }
-    });
-
-    // grid delegation: start experiment by pressing start button inside a card
-    gridEl.addEventListener('click', (ev)=>{
-      const btn = ev.target.closest('button[data-idx]');
-      if(!btn) return;
-      const idx = parseInt(btn.getAttribute('data-idx'), 10);
-      if(Number.isFinite(idx)) openExperiment(idx);
-    });
-  }
-
-  function selectAge(selectedAge, tileEl){
-    if(!EXPERIMENTS[selectedAge]) {
-      alert('No experiments for ' + selectedAge);
-      return;
-    }
-    age = selectedAge;
-    hubEl.style.display = 'flex';
-    hubTitle.textContent = 'Age ' + age;
-    ensureProgress();
-    renderGrid();
-    updateUIProgress();
-    setMode('play');
-    attachControlsOnce();
-    // update preview name
-    document.getElementById('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
-    // visually mark the selected tile
-    tilesEl.querySelectorAll('.tile').forEach(t=> t.setAttribute('aria-pressed','false'));
-    if(tileEl) tileEl.setAttribute('aria-pressed','true');
-    log('Selected age group:', age);
-  }
-
+  // helper
   function escapeHtml(s){ return (''+s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;', '\"':'&quot;', \"'\":\"&#39;\"}[c] || c)); }
 
-  // SCORING constant referencing
-  const SCORING = { firstTry:10, hint:7, later:4 };
-
-  // initialize after DOM ready (ensures all elements present)
+  // initial tiny setup so hub controls exist; no event delegation needed for tiles
   document.addEventListener('DOMContentLoaded', ()=>{
-    tilesEl = document.getElementById('age-tiles');
-    hubEl = document.getElementById('hub');
-    hubTitle = document.getElementById('hub-title');
-    gridEl = document.getElementById('experiments-grid');
-    progressDisplay = document.getElementById('progress-display');
-    ptsEl = document.getElementById('pts');
-    starsEl = document.getElementById('stars');
-    badgesEl = document.getElementById('badges');
-    certNameEl = document.getElementById('cert-name');
-    certScoreEl = document.getElementById('cert-score');
-
-    modalEl = document.getElementById('modal');
-    modalBody = document.getElementById('modal-body');
-    modalTitle = document.getElementById('modal-title');
-    modalSub = document.getElementById('modal-sub');
-    closeModalBtn = document.getElementById('close-modal');
-    repeatVoiceBtn = document.getElementById('repeat-voice');
-    hintBtn = document.getElementById('hint-btn');
-    nextBtn = document.getElementById('next-btn');
-
-    playBtn = document.getElementById('play-mode-btn');
-    trainBtn = document.getElementById('train-mode-btn');
-    resetBtn = document.getElementById('reset-btn');
-    certBtn = document.getElementById('certificate-btn');
-
-    attachTileAndGridHandlers();
-    // If you want the first tile auto-selected uncomment next line:
-    // document.querySelector('.tile[data-age="5-8"]').click();
-
-    log('App initialized — waiting for user to pick an age group');
+    log('Page ready. Tiles use inline onclick - should be reliable.');
   });
-
 })();
 </script>
+
 </body>
 </html>
