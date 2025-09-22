@@ -3,21 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Science Experiments Game — Auto-play, 5–8 highlighted options</title>
+<title>Science Experiments Game</title>
 <style>
-  :root{
-    --bg:#f6fbff; --card:#fff; --muted:#59686f; --accent:#1766a0; --ok:#1f8a3f; --bad:#c73a3a;
-  }
+  :root{ --bg:#f6fbff; --card:#ffffff; --muted:#6a7682; --accent:#1667a6; --success:#15843a; --danger:#c63636; }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,Arial,Helvetica,sans-serif;background:var(--bg);color:#042633}
-  header{padding:18px;text-align:center}
-  header h1{margin:0;font-size:20px}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#062233}
+  header{padding:20px;text-align:center}
+  header h1{margin:0;font-size:22px}
   header p{margin:6px 0;color:var(--muted);font-size:13px}
   .wrap{max-width:980px;margin:12px auto;padding:12px}
-  .tiles{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:12px 0}
-  .tile{padding:12px 16px;border-radius:12px;background:var(--card);box-shadow:0 8px 20px rgba(6,30,60,0.06);cursor:pointer;min-width:120px;text-align:center;font-weight:700;outline:none;touch-action:manipulation}
+  .tiles{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+  .tile{padding:12px 16px;border-radius:12px;background:var(--card);box-shadow:0 8px 22px rgba(8,20,40,0.06);cursor:pointer;min-width:128px;text-align:center;font-weight:700;outline:none}
   .tile small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:6px}
-  .hub{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 22px rgba(8,20,40,0.06);margin-top:12px}
+  .hub{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 24px rgba(8,20,40,0.06);margin-top:12px}
   .controls{display:flex;gap:8px;flex-wrap:wrap}
   button{cursor:pointer;border:1px solid rgba(8,20,40,0.06);background:white;padding:8px 12px;border-radius:8px}
   .small{font-size:13px;color:var(--muted)}
@@ -26,53 +24,51 @@
   .diagram{display:flex;justify-content:center;margin-bottom:10px}
   .diagram svg{max-width:100%;height:auto;width:320px}
   .question{font-size:18px;font-weight:700;margin-bottom:10px;text-align:center}
-  .options{display:flex;flex-direction:column;gap:10px;margin-top:6px}
-  /* For age 5-8 options: show letter badge */
-  .opt-btn{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;border:1px solid #eaf6ff;background:linear-gradient(#fff,#fbfeff);text-align:left;cursor:pointer}
-  .opt-letter{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;background:#f1f7fb;color:#214d6f;border:2px solid rgba(6,30,60,0.06);font-size:18px}
-  .opt-letter.highlight{background:#fffbde;color:#886300;border-color:#f2d46d}
-  .opt-letter.correct{background:var(--ok);color:#fff}
-  .opt-letter.wrong{background:var(--bad);color:#fff}
+  .options{display:flex;flex-direction:column;gap:8px}
+  /* 5-8 styled options */
+  .opt-btn{display:flex;gap:12px;align-items:center;padding:12px;border-radius:8px;border:1px solid #eaf5ff;background:linear-gradient(#fff,#fbfdff);text-align:left;cursor:pointer}
+  .opt-letter{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;background:#f0f6fb;color:#214a66;border:2px solid rgba(8,20,40,0.06);font-size:18px}
+  .opt-letter.highlight{background:#fff4cc;color:#6f4d00;border-color:#f0d36a}
+  .opt-letter.correct{background:var(--success);color:#fff}
+  .opt-letter.wrong{background:var(--danger);color:#fff}
   .opt-text{font-size:16px}
   .feedback{margin-top:10px;min-height:28px;font-weight:700;text-align:center}
-  .correct{color:var(--ok)}
-  .wrong{color:var(--bad)}
-  .hint{color:#5b4400;background:#fff8e0;padding:8px;border-radius:8px;margin-top:8px}
+  .correct{color:var(--success)}
+  .wrong{color:var(--danger)}
+  .hint{color:#664400;background:#fff8e0;padding:8px;border-radius:8px;margin-top:8px}
   .controls-bottom{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
   .footer{padding:12px;text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
   @media (max-width:720px){
+    .opt-letter{width:44px;height:44px}
     .diagram svg{width:260px}
     .question{font-size:16px}
-    .opt-text{font-size:15px}
   }
 </style>
 </head>
 <body>
 <header>
   <h1>Science Experiments Game</h1>
-  <p>One experiment at a time • Auto-play on correct answer • 5–8 options highlighted & spoken</p>
+  <p>One experiment at a time — Play or Training. For age 5–8 options are lettered and highlighted/sounded.</p>
 </header>
 
 <div class="wrap">
-  <!-- Age selection -->
   <div id="stage-age">
     <div class="small" style="text-align:center;margin-bottom:8px">Choose an age group</div>
     <div class="tiles" aria-label="Age groups">
-      <div class="tile" data-age="5-8" tabindex="0" onclick="selectAge('5-8',this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('5-8',this)}">
-        Age 5–8 <small>Picture + lettered options (A/B/C)</small>
+      <div class="tile" data-age="5-8" tabindex="0" onclick="selectAge('5-8', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('5-8',this)}">
+        Age 5–8 <small>Beginner</small>
       </div>
-      <div class="tile" data-age="8-14" tabindex="0" onclick="selectAge('8-14',this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('8-14',this)}">
-        Age 8–14 <small>Illustrated/text options</small>
+      <div class="tile" data-age="8-14" tabindex="0" onclick="selectAge('8-14', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('8-14',this)}">
+        Age 8–14 <small>Curious</small>
       </div>
-      <div class="tile" data-age="14+" tabindex="0" onclick="selectAge('14+',this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('14+',this)}">
+      <div class="tile" data-age="14+" tabindex="0" onclick="selectAge('14+', this)" onkeydown="if(event.key==='Enter'){event.preventDefault();selectAge('14+',this)}">
         Age 14+ <small>Advanced</small>
       </div>
     </div>
   </div>
 
-  <!-- Hub -->
   <div id="stage-hub" class="hub" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <div>
         <h2 id="hub-title" style="margin:0">Age</h2>
         <div id="progress-display" class="small">Solved 0 / 0</div>
@@ -91,15 +87,14 @@
 
     <div class="status small" id="status-bar">Points: <span id="pts">0</span> • Stars: <span id="stars">0</span></div>
 
-    <!-- Single experiment -->
     <div id="experiment-card" class="card" style="display:none">
       <div id="diagram-wrapper" class="diagram" aria-hidden="false"></div>
 
-      <div class="question" id="question-text">Question will appear here</div>
+      <div class="question" id="question-text">Question text</div>
 
-      <div class="options" id="options-box" role="list"></div>
+      <div class="options" id="options-box"></div>
 
-      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="feedback" id="feedback"></div>
 
       <div class="controls-bottom">
         <button onclick="repeatVoice()">🔁 Repeat</button>
@@ -109,9 +104,9 @@
     </div>
 
     <div id="finished-card" class="card" style="display:none">
-      <div style="font-weight:700">You've completed this level — great job!</div>
+      <div style="font-weight:700">You finished this level — well done!</div>
       <div class="small" style="margin-top:8px">Generate a certificate or restart the level.</div>
-      <div style="margin-top:12px;display:flex;gap:8px">
+      <div style="margin-top:10px;display:flex;gap:8px">
         <button onclick="restartLevel()">Restart</button>
         <button onclick="backToAge()">Back to Age selection</button>
       </div>
@@ -122,196 +117,162 @@
 <div class="footer">Created &amp; Designed by Animesh</div>
 
 <script>
-/* -----------------------------
-   Simple SVG pipe diagram (left & right)
-   Left pipe has clear CROSS block shape; right pipe is open.
-   ----------------------------- */
-function svgTwoPipesWithCross(){
-  return `
-    <svg viewBox="0 0 360 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two vertical pipes side by side; left pipe blocked with a red cross; right pipe open to bucket">
-      <rect width="360" height="140" rx="10" fill="#ffffff"/>
-      <!-- left vertical pipe -->
-      <path d="M80 20 v30 h20 v10 h40 v20" stroke="#2f6f99" stroke-width="18" stroke-linecap="round" fill="none"/>
-      <!-- right vertical pipe -->
-      <path d="M220 20 v30 h20 v10 h40 v20" stroke="#2f9a66" stroke-width="18" stroke-linecap="round" fill="none"/>
-      <!-- left block as cross -->
-      <g transform="translate(130,64) rotate(-10)">
-        <rect x="-10" y="-14" width="20" height="28" rx="3" fill="#c73a3a" />
-      </g>
-      <!-- left red cross overlay to make it more visible -->
-      <g transform="translate(128,54) rotate(-20)" stroke="#fff" stroke-width="4" stroke-linecap="round">
-        <line x1="-8" y1="-8" x2="8" y2="8"></line>
-        <line x1="-8" y1="8" x2="8" y2="-8"></line>
-      </g>
-      <!-- bucket at bottom right -->
-      <rect x="260" y="70" width="72" height="48" rx="6" fill="#e6f7ff" stroke="#6a9ab5" />
-      <text x="296" y="100" font-size="12" text-anchor="middle" fill="#3a6a9a">Bucket</text>
+/* --------------------------
+   Reused SVG helpers (previous working version)
+   with an improved left/right pipe diagram (left has red X)
+   -------------------------- */
 
-      <!-- labels under pipes -->
-      <text x="90" y="128" font-size="13" text-anchor="middle" fill="#264e66">Left pipe</text>
-      <text x="240" y="128" font-size="13" text-anchor="middle" fill="#2f7f53">Right pipe</text>
-    </svg>`;
+function svgPipeLeftRight(){
+  return `
+  <svg viewBox="0 0 360 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two pipes side by side; left pipe blocked with an X; right pipe open to bucket">
+    <rect width="360" height="140" rx="10" fill="#fff"/>
+    <!-- left pipe path (blue) -->
+    <path d="M60 20 v24 h20 v6 h60 v24" stroke="#2f6f99" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <!-- right pipe path (green) -->
+    <path d="M220 20 v24 h20 v6 h60 v24" stroke="#2f9a66" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <!-- red cross block on left pipe -->
+    <g transform="translate(158,64) rotate(-18)">
+      <rect x="-12" y="-16" width="24" height="32" rx="3" fill="#c63636" />
+      <line x1="-10" y1="-14" x2="10" y2="14" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <line x1="-10" y1="14" x2="10" y2="-14" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- bucket on right -->
+    <rect x="280" y="76" width="60" height="44" rx="6" fill="#e6f7ff" stroke="#6a9ab5" />
+    <text x="310" y="102" font-size="12" text-anchor="middle" fill="#2c6b8a">Bucket</text>
+    <text x="100" y="128" font-size="12" text-anchor="middle" fill="#264e66">Left</text>
+    <text x="260" y="128" font-size="12" text-anchor="middle" fill="#2f7f53">Right</text>
+  </svg>`;
 }
 
-/* =============================
-   Experiments — moderate set for demonstration
-   (You can add to these arrays — the code supports many questions.)
-   For Age 5-8: options are lettered and include text (no images inside options).
-   ============================= */
+function svgCircuitDiagram(){
+  return `
+  <svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two circuits, top closed bottom open">
+    <rect width="340" height="140" rx="12" fill="#fff"/>
+    <line x1="20" y1="30" x2="120" y2="30" stroke="#333" stroke-width="4"/>
+    <rect x="60" y="18" width="14" height="24" fill="#222"/>
+    <rect x="80" y="18" width="6" height="24" fill="#222"/>
+    <circle cx="140" cy="30" r="8" fill="#ffc93b" stroke="#b36700" stroke-width="2"/>
+    <text x="170" y="34" font-size="12" fill="#333">Bulb (lights)</text>
+
+    <line x1="20" y1="90" x2="120" y2="90" stroke="#333" stroke-width="4"/>
+    <rect x="60" y="78" width="14" height="24" fill="#222"/>
+    <rect x="80" y="78" width="6" height="24" fill="#222"/>
+    <line x1="140" y1="90" x2="200" y2="90" stroke="#333" stroke-width="4" stroke-dasharray="6,6"/>
+    <text x="220" y="94" font-size="12" fill="#333">Bulb (off)</text>
+
+    <text x="60" y="14" font-size="12" fill="#333">Complete circuit</text>
+    <text x="60" y="104" font-size="12" fill="#333">Open circuit</text>
+  </svg>`;
+}
+
+/* ===============================
+   Experiment data (previous working set)
+   - For Age 5-8: options are strings like "A: Left", "B: Right" (no images)
+   - Other ages: can include imageSVG or simple options
+   =============================== */
 
 const EXPERIMENTS = {
   "5-8": [
-    { prompt: "Which pipe will fill the bucket? (Left or Right)", imageSVG: svgTwoPipesWithCross(),
-      // options: A/B/C style; third option can be "Both" etc
+    {
+      prompt: "Which pipe will fill the bucket?",
+      imageSVG: svgPipeLeftRight(),
       options: ["A: Left", "B: Right", "C: Both"],
       answer: 1,
-      hint: "Find the red cross blocking the pipe. The open one goes to the bucket.",
-      explanation: "The left pipe has a block (red cross). The right pipe is open and will fill the bucket.",
-      voice: "Which pipe will fill the bucket. Option A: Left. Option B: Right. Option C: Both."
+      hint: "Find the red cross block — the open pipe will lead to the bucket.",
+      explanation: "The left pipe has a block (red cross). The right pipe is open and fills the bucket.",
+      voice: "Which pipe will fill the bucket? Option A: Left. Option B: Right. Option C: Both."
     },
-
-    { prompt: "Which object will float on water?", imageSVG: null,
-      options: ["A: Rock", "B: Piece of wood", "C: Coin"], answer:1,
-      hint: "Which one is light and not very heavy?", explanation:"Wood floats; it is less dense than water.",
-      voice:"Which object will float on water. A: Rock. B: Piece of wood. C: Coin."
+    {
+      prompt: "Which object will float on water?",
+      options: ["A: Rock", "B: Piece of wood", "C: Coin"],
+      answer: 1,
+      hint: "Think about which is lighter",
+      explanation: "Wood floats because it is less dense than water.",
+      voice: "Which object will float on water? A: Rock. B: Piece of wood. C: Coin."
     },
-
-    { prompt: "Which melts faster: ice in the sun or in the shade?", imageSVG: null,
-      options: ["A: Sun", "B: Shade", "C: Both same"], answer:0,
-      hint: "Where is it warmer?", explanation:"Ice melts faster in sun because it's warmer there.",
-      voice:"Which melts faster, ice in the sun or in the shade. A: Sun. B: Shade. C: Both same."
+    {
+      prompt: "Which melts faster: ice in sun or in shade?",
+      options: ["A: Sun", "B: Shade", "C: Both same"],
+      answer: 0,
+      hint: "Where is it warmer?",
+      explanation: "Ice melts faster in the sun because it is warmer.",
+      voice: "Which melts faster, ice in the sun or in the shade? A: Sun. B: Shade. C: Both same."
     },
-
-    { prompt: "Which makes a bigger shadow under same light?", imageSVG: null,
-      options: ["A: Tall tree", "B: Small plant", "C: Feather"], answer:0,
-      hint: "Which object blocks more light?", explanation:"The tall tree casts a bigger shadow.",
-      voice:"Which makes a bigger shadow. A: Tall tree. B: Small plant. C: Feather."
+    {
+      prompt: "Which makes a bigger shadow under same light?",
+      options: ["A: Tall tree", "B: Small plant", "C: Feather"],
+      answer: 0,
+      hint: "Bigger objects cast bigger shadows",
+      explanation: "A tall tree casts a larger shadow.",
+      voice: "Which makes a bigger shadow? A: Tall tree. B: Small plant. C: Feather."
     },
-
-    { prompt: "Which color do you get when you mix red and blue?", imageSVG: null,
-      options: ["A: Purple", "B: Green", "C: Orange"], answer:0,
-      hint: "Mix red and blue", explanation:"Red plus blue makes purple.",
-      voice:"What color when red and blue mix. A: Purple. B: Green. C: Orange."
-    },
-
-    { prompt: "Which will stick to a magnet?", imageSVG: null,
-      options: ["A: Paper clip", "B: Balloon", "C: Cork"], answer:0,
-      hint: "Made of metal", explanation:"Paper clips are metal and stick to magnets.",
-      voice:"Which sticks to a magnet. A: Paper clip. B: Balloon. C: Cork."
-    },
-
-    { prompt: "Which will sink in water?", imageSVG: null,
-      options: ["A: Stone", "B: Cork", "C: Soap"], answer:0,
-      hint: "Heavy and dense objects sink", explanation:"Stone sinks because it's denser than water.",
-      voice:"Which will sink. A: Stone. B: Cork. C: Soap."
-    },
-
-    { prompt: "Which helps a plant grow?", imageSVG: null,
-      options: ["A: Sunlight", "B: Candy", "C: Video games"], answer:0,
-      hint: "Source of energy for plants", explanation:"Plants need sunlight, water and soil to grow.",
-      voice:"Which helps a plant grow. A: Sunlight. B: Candy. C: Video games."
-    },
-
-    { prompt: "Which rolls easily?", imageSVG: null,
-      options: ["A: Ball", "B: Block", "C: Sheet of paper"], answer:0,
-      hint: "Round objects roll", explanation:"A ball is round and rolls easily.",
-      voice:"Which rolls easily. A: Ball. B: Block. C: Sheet of paper."
-    },
-
-    { prompt: "Which season leaves fall?", imageSVG: null,
-      options: ["A: Autumn", "B: Summer", "C: Spring"], answer:0,
-      hint: "Trees prepare for winter", explanation:"Leaves typically fall in autumn.",
-      voice:"Which season leaves fall. A: Autumn. B: Summer. C: Spring."
+    {
+      prompt: "Which will stick to a magnet?",
+      options: ["A: Paper clip", "B: Balloon", "C: Cork"],
+      answer: 0,
+      hint: "Made of metal",
+      explanation: "A paper clip is magnetic.",
+      voice: "Which will stick to a magnet? A: Paper clip. B: Balloon. C: Cork."
     }
   ],
-
   "8-14": [
-    { prompt: "Which simple circuit will light a bulb? (choose)", imageSVG: null,
-      options: ["Closed circuit (complete loop)","Open circuit (broken)","No battery"], answer:0,
-      hint:"A closed loop with a battery and bulb lights the bulb.", explanation:"A complete circuit allows current flow, lighting the bulb.",
-      voice:"Which circuit lights a bulb. Option closed, option open, option no battery."
+    {
+      prompt: "Which simple circuit will light the bulb?",
+      imageSVG: svgCircuitDiagram(),
+      options: ["Complete circuit (closed)", "Open circuit (broken)", "No battery"],
+      answer: 0,
+      hint: "You need a battery and a closed path",
+      explanation: "A complete closed circuit allows current to flow and the bulb to light.",
+      voice: "Which simple circuit will light the bulb? Closed, open, or no battery?"
     },
-
-    { prompt: "Which soil drains water fastest?", options:["Sand","Clay","Loam"], answer:0,
-      hint:"Large grains drain quicker.", explanation:"Sand has large particles and drains faster.",
-      voice:"Which soil drains faster. Sand, Clay, or Loam."
+    {
+      prompt: "Which soil drains water fastest?",
+      options: ["Sand", "Clay", "Loam"],
+      answer: 0,
+      hint: "Large grains let water pass easily",
+      explanation: "Sand drains water faster than clay or loam.",
+      voice: "Which soil drains water fastest? Sand, Clay, or Loam."
     },
-
-    { prompt: "What does pH measure?", options:["Acidity or basicity","Temperature","Density"], answer:0,
-      hint:"Used for acids and bases.", explanation:"pH measures acidity or basicity of a solution.",
-      voice:"What does pH measure? Acidity or basicity, Temperature, or Density."
-    },
-
-    { prompt: "Which produces static electricity?", options:["Rubbing balloon on hair","Putting balloon in water","Freezing balloon"], answer:0,
-      hint:"Friction moves charge.", explanation:"Rubbing produces static electrical charge.",
-      voice:"Which produces static electricity. Rubbing balloon on hair, putting balloon in water, freezing balloon."
-    },
-
-    { prompt: "Why does a metal spoon get hot in hot soup?", options:["Conduction","Convection","Radiation"], answer:0,
-      hint:"Heat travels through contact on solids.", explanation:"Spoons conduct heat from the soup along the metal.",
-      voice:"Why does a metal spoon get hot in hot soup. Conduction, Convection, or Radiation."
-    },
-
-    { prompt: "Which is a chemical change?", options:["Paper burning","Ice melting","Salt dissolving"], answer:0,
-      hint:"New substances are formed.", explanation:"Burning paper produces ash and gases.",
-      voice:"Which is chemical change. Paper burning, ice melting, salt dissolving."
-    },
-
-    { prompt: "Which device measures electrical current?", options:["Ammeter","Thermometer","Barometer"], answer:0,
-      hint:"Think amps.", explanation:"An ammeter measures electrical current.", voice:"Which device measures electrical current. Ammeter, Thermometer, or Barometer."
-    },
-
-    { prompt: "Which shows potential energy converting to kinetic?", options:["Ball rolling down","Ball at rest","Ball held up"], answer:0,
-      hint:"Energy as it moves.", explanation:"A ball rolling down converts potential energy into kinetic.",
-      voice:"Which shows potential to kinetic energy. Ball rolling down, ball at rest, or ball held up."
-    },
-
-    { prompt: "Which liquid evaporates fastest at room temp?", options:["Water","Honey","Vegetable oil"], answer:0,
-      hint:"Less viscous liquids evaporate faster.", explanation:"Water evaporates faster than honey or oil.",
-      voice:"Which liquid evaporates fastest. Water, Honey, or Vegetable oil."
-    },
-
-    { prompt: "Which lens makes distant objects appear smaller?", options:["Convex","Concave","Plano"], answer:1,
-      hint:"Diverging lens makes images smaller.", explanation:"A concave lens diverges light and forms smaller images.", voice:"Which lens makes distant objects smaller. Convex, Concave, or Plano."
+    {
+      prompt: "What does pH measure?",
+      options: ["Acidity or basicity", "Temperature", "Density"],
+      answer: 0,
+      hint: "Used for acids and bases",
+      explanation: "pH measures acidity or basicity.",
+      voice: "What does pH measure? Acidity, Temperature, or Density."
     }
   ],
-
   "14+": [
-    { prompt:"Which phenomenon bends light at an interface?", options:["Refraction","Reflection","Diffraction"], answer:0,
-      hint:"Light changes direction entering a new medium.", explanation:"Refraction is bending of light when it passes between media.", voice:"Which bends light at an interface. Refraction, Reflection, or Diffraction." },
-
-    { prompt:"Which gas contributes to acid rain?", options:["Sulfur dioxide","Nitrogen gas","Oxygen"], answer:0,
-      hint:"Emitted by burning fossil fuels.", explanation:"Sulfur dioxide forms sulfuric acid leading to acid rain.", voice:"Which gas contributes to acid rain. Sulfur dioxide, Nitrogen gas, or Oxygen." },
-
-    { prompt:"Which law states F = ma?", options:["Newton's Second Law","Conservation of Energy","Ohm's Law"], answer:0,
-      hint:"Force equals mass times acceleration.", explanation:"Newton's second law is F = ma.", voice:"Which law states F equals ma. Newton's Second Law, Conservation of Energy, or Ohm's Law." },
-
-    { prompt:"Which unit measures electric charge?", options:["Coulomb","Watt","Newton"], answer:0,
-      hint:"Symbol C.", explanation:"Electric charge is measured in coulombs.", voice:"Which unit measures electric charge. Coulomb, Watt, or Newton." },
-
-    { prompt:"Which best describes an exothermic reaction?", options:["Releases heat","Absorbs heat","No temperature change"], answer:0,
-      hint:"Surroundings get warmer.", explanation:"Exothermic reactions release heat to surroundings.", voice:"Which describes exothermic reaction. Releases heat, Absorbs heat, or No change." },
-
-    { prompt:"Which biomolecule stores genetic info?", options:["DNA","Carbohydrate","Lipid"], answer:0,
-      hint:"Found in nuclei.", explanation:"DNA stores genetic information.", voice:"Which biomolecule stores genetic information. DNA, Carbohydrate, or Lipid." },
-
-    { prompt:"Which method separates a soluble solid from liquid?", options:["Evaporation","Filtration","Magnetic separation"], answer:0,
-      hint:"Remove the liquid to recover the solid.", explanation:"Evaporation leaves the dissolved solid behind.", voice:"Which method separates a soluble solid from a liquid. Evaporation, Filtration, or Magnetic separation." },
-
-    { prompt:"Why do metals conduct electricity?", options:["Free electrons move","Ionic bonds break","They contain water"], answer:0,
-      hint:"Delocalized electrons carry charge.", explanation:"Metals have free electrons that move and carry current.", voice:"Why do metals conduct electricity. Free electrons move, Ionic bonds break, or They contain water." },
-
-    { prompt:"Which describes fusion?", options:["Combining light nuclei","Splitting heavy nuclei","Chemical bonding"], answer:0,
-      hint:"This powers the Sun.", explanation:"Fusion combines light nuclei producing energy.", voice:"Which describes fusion. Combining light nuclei, Splitting heavy nuclei, or Chemical bonding." },
-
-    { prompt:"Which process forms sedimentary rock?", options:["Compaction & cementation","Melting and cooling","Metamorphism"], answer:0,
-      hint:"Layers of sediment compact over time.", explanation:"Sediments compact and cement into sedimentary rock.", voice:"Which process forms sedimentary rock. Compaction and cementation, Melting and cooling, or Metamorphism." }
+    {
+      prompt: "Which phenomenon bends light at an interface?",
+      options: ["Refraction", "Reflection", "Diffraction"],
+      answer: 0,
+      hint: "Light changes direction entering a new medium",
+      explanation: "Refraction bends light between media.",
+      voice: "Which phenomenon bends light at an interface? Refraction, Reflection, or Diffraction."
+    },
+    {
+      prompt: "Which gas contributes to acid rain?",
+      options: ["Sulfur dioxide", "Nitrogen gas", "Oxygen"],
+      answer: 0,
+      hint: "Emitted from burning fossil fuels",
+      explanation: "Sulfur dioxide forms acids in the atmosphere, contributing to acid rain.",
+      voice: "Which gas contributes to acid rain? Sulfur dioxide, Nitrogen gas, or Oxygen."
+    },
+    {
+      prompt: "Which formula represents conservation of mechanical energy?",
+      options: ["KE_i + PE_i = KE_f + PE_f", "F = ma", "P = F/A"],
+      answer: 0,
+      hint: "Sum of kinetic and potential energy",
+      explanation: "Kinetic + potential energy is conserved in absence of non-conservative forces.",
+      voice: "Which formula represents conservation of mechanical energy?"
+    }
   ]
 };
 
-/* -----------------------------
-   App logic: auto-advance on correct
-   ----------------------------- */
+/* ============================
+   State and helpers
+   ============================ */
 
 const storagePrefix = 'scigame_v1_';
 let currentAge = null;
@@ -319,18 +280,18 @@ let currentIndex = 0;
 let currentMode = 'play';
 let progress = { points:0, stars:0, solved:{} };
 let currentExperiment = null;
-let highlightStepTimer = null; // for option highlight sequence in 5-8
+let highlightTimer = null;
 
 function $(id){ return document.getElementById(id); }
 
 function speak(text){
   if(!('speechSynthesis' in window)) return;
-  try{ window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang='en-US'; window.speechSynthesis.speak(u); } catch(e){}
+  try{ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='en-US'; window.speechSynthesis.speak(u); } catch(e){}
 }
 
 /* Select age */
 function selectAge(age, el){
-  stopHighlightSequence();
+  stopHighlighting();
   currentAge = age;
   currentIndex = 0;
   progress = loadProgress(age);
@@ -340,14 +301,13 @@ function selectAge(age, el){
   updateProgressUI();
   setMode('play');
   showExperiment();
-  var tiles = document.querySelectorAll('.tile');
-  tiles.forEach(t=>t.setAttribute('aria-pressed','false'));
+  document.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed','false'));
   if(el) el.setAttribute('aria-pressed','true');
 }
 
 /* Back */
 function backToAge(){
-  stopHighlightSequence();
+  stopHighlighting();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   currentAge = null;
   $('stage-hub').style.display = 'none';
@@ -357,18 +317,22 @@ function backToAge(){
 /* Storage */
 function storageKey(age){ return storagePrefix + age; }
 function loadProgress(age){
-  var raw = localStorage.getItem(storageKey(age));
+  const raw = localStorage.getItem(storageKey(age));
   if(!raw) return { points:0, stars:0, solved:{} };
-  try{ return JSON.parse(raw); }catch(e){ return { points:0, stars:0, solved:{} }; }
+  try{ return JSON.parse(raw); } catch(e){ return { points:0, stars:0, solved:{} }; }
 }
-function saveProgress(){ if(!currentAge) return; localStorage.setItem(storageKey(currentAge), JSON.stringify(progress)); updateProgressUI(); }
+function saveProgress(){
+  if(!currentAge) return;
+  localStorage.setItem(storageKey(currentAge), JSON.stringify(progress));
+  updateProgressUI();
+}
 
-/* Update UI */
+/* UI updates */
 function updateProgressUI(){
   if(!currentAge) return;
-  var total = (EXPERIMENTS[currentAge] || []).length;
-  var solvedCount = Object.keys(progress.solved || {}).length;
-  $('progress-display').textContent = 'Solved ' + solvedCount + ' / ' + total;
+  const total = (EXPERIMENTS[currentAge] || []).length;
+  const solvedCount = Object.keys(progress.solved || {}).length;
+  $('progress-display').textContent = `Solved ${solvedCount} / ${total}`;
   $('pts').textContent = progress.points || 0;
   $('stars').textContent = progress.stars || 0;
 }
@@ -381,10 +345,10 @@ function setMode(m){
   if(currentAge) showExperiment();
 }
 
-/* Render experiment */
+/* Show experiment */
 function showExperiment(){
-  stopHighlightSequence();
-  var list = EXPERIMENTS[currentAge] || [];
+  stopHighlighting();
+  const list = EXPERIMENTS[currentAge] || [];
   if(currentIndex >= list.length){
     $('experiment-card').style.display = 'none';
     $('finished-card').style.display = 'block';
@@ -396,7 +360,8 @@ function showExperiment(){
   currentExperiment = list[currentIndex];
 
   // diagram
-  var di = $('diagram-wrapper'); di.innerHTML = '';
+  const di = $('diagram-wrapper');
+  di.innerHTML = '';
   if(currentExperiment.imageSVG){
     di.innerHTML = currentExperiment.imageSVG;
     di.setAttribute('aria-hidden','false');
@@ -404,179 +369,179 @@ function showExperiment(){
     di.setAttribute('aria-hidden','true');
   }
 
-  $('question-text').textContent = '(' + (currentIndex+1) + ') ' + currentExperiment.prompt;
+  $('question-text').textContent = `(${currentIndex+1}) ${currentExperiment.prompt}`;
 
-  var box = $('options-box'); box.innerHTML = '';
-  var opts = currentExperiment.options || [];
-  // For age 5-8 we render lettered options with special badge highlighting sequence
-  var isPreschool = (currentAge === '5-8');
-  for(var i=0;i<opts.length;i++){
-    (function(i){
-      var opt = opts[i];
-      // option button
-      var btn = document.createElement('button');
-      btn.className = 'opt-btn';
-      btn.type = 'button';
-      btn.setAttribute('data-index', i);
-      // left letter badge (A/B/C) for 5-8
-      var letter = document.createElement('div');
+  // render options
+  const box = $('options-box');
+  box.innerHTML = '';
+  const opts = currentExperiment.options || [];
+  const preschool = (currentAge === '5-8');
+
+  for(let i=0;i<opts.length;i++){
+    const opt = opts[i];
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.type = 'button';
+    btn.setAttribute('data-index', i);
+
+    if(preschool){
+      const letter = document.createElement('div');
       letter.className = 'opt-letter';
-      letter.textContent = String.fromCharCode(65 + i); // A/B/C...
-      // text label
-      var label = document.createElement('div');
+      letter.textContent = String.fromCharCode(65 + i);
+      const label = document.createElement('div');
       label.className = 'opt-text';
       label.textContent = opt;
       btn.appendChild(letter);
       btn.appendChild(label);
-      // click handler
-      btn.onclick = function(){ userChoose(i); };
-      // keyboard handler for accessibility
-      btn.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); userChoose(i); } };
-      box.appendChild(btn);
-    })(i);
+    } else {
+      // for other ages: show text (option might be string or object)
+      if(typeof opt === 'string'){
+        const label = document.createElement('div');
+        label.className = 'opt-text';
+        label.textContent = opt;
+        btn.appendChild(label);
+      } else if(typeof opt === 'object'){
+        // if option has imgSVG + text, show image then label (previous working format)
+        if(opt.imgSVG){
+          const wrap = document.createElement('div');
+          wrap.innerHTML = opt.imgSVG;
+          wrap.style.marginRight = '12px';
+          btn.appendChild(wrap);
+        }
+        const label = document.createElement('div');
+        label.className = 'opt-text';
+        label.textContent = opt.text || '';
+        btn.appendChild(label);
+      }
+    }
+
+    btn.onclick = ()=> handleChoice(i);
+    btn.onkeydown = (e)=> { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleChoice(i); } };
+    box.appendChild(btn);
   }
 
   $('feedback').innerHTML = '';
   $('next-btn').style.display = 'none';
   updateProgressUI();
 
-  // If age 5-8, start the highlight + spoken prompts sequence for A, B, C
-  if(isPreschool){
+  // if preschool -> start highlight sequence for A/B/C and voice prompts
+  if(preschool){
     startHighlightSequence();
   } else {
-    // speak the full prompt for older kids
+    // speak prompt for others
     speak(currentExperiment.voice || currentExperiment.prompt);
   }
 
-  // In training mode, automatically reveal answer then auto-advance after delay
+  // if training mode: auto-reveal & advance after short delay
   if(currentMode === 'train'){
-    // small delay to let children hear prompt / highlights first
-    setTimeout(()=> { revealTrainingAnswerAndAdvance(); }, 1200);
+    setTimeout(()=> revealTrainingThenAdvance(), 1000);
   }
 }
 
-/* Highlight sequence for 5-8: sequentially highlight A, B, C and speak them */
+/* Highlight sequence for preschool: highlight each letter then speak it */
 function startHighlightSequence(){
   const box = $('options-box');
   const buttons = box.querySelectorAll('.opt-btn');
-  let i = 0;
+  let idx = 0;
   function step(){
-    // clear previous
-    buttons.forEach(b => b.querySelector('.opt-letter').classList.remove('highlight'));
-    if(i < buttons.length){
-      const b = buttons[i];
-      b.querySelector('.opt-letter').classList.add('highlight');
-      // speak option text: "Option A: Piece of wood"
-      const letter = b.querySelector('.opt-letter').textContent;
-      const text = b.querySelector('.opt-text').textContent;
-      speak('Option ' + letter + ': ' + text.replace(/^[A-Z]:\s*/,''));
-      i++;
-      highlightStepTimer = setTimeout(step, 950); // move to next option after ~0.95s
+    // clear previous highlights
+    buttons.forEach(b => {
+      const l = b.querySelector('.opt-letter');
+      if(l) l.classList.remove('highlight');
+    });
+    if(idx < buttons.length){
+      const b = buttons[idx];
+      const letterEl = b.querySelector('.opt-letter');
+      if(letterEl) letterEl.classList.add('highlight');
+      const letter = letterEl ? letterEl.textContent : ('Option ' + (idx+1));
+      const text = b.querySelector('.opt-text') ? b.querySelector('.opt-text').textContent.replace(/^[A-Z]:\s*/,'') : '';
+      speak('Option ' + letter + ': ' + text);
+      idx++;
+      highlightTimer = setTimeout(step, 900);
     } else {
-      // clear highlight after the sequence
-      buttons.forEach(b => b.querySelector('.opt-letter').classList.remove('highlight'));
-      highlightStepTimer = null;
+      // clear highlights when done
+      buttons.forEach(b => { const l = b.querySelector('.opt-letter'); if(l) l.classList.remove('highlight'); });
+      highlightTimer = null;
     }
   }
   step();
 }
 
 /* Stop highlight timer */
-function stopHighlightSequence(){
-  if(highlightStepTimer){ clearTimeout(highlightStepTimer); highlightStepTimer = null; }
-  // clear any letter highlights
-  const letters = document.querySelectorAll('.opt-letter');
-  letters.forEach(l => l.classList.remove('highlight'));
+function stopHighlighting(){
+  if(highlightTimer){ clearTimeout(highlightTimer); highlightTimer = null; }
+  document.querySelectorAll('.opt-letter').forEach(l => l.classList.remove('highlight'));
 }
 
-/* When user chooses an option (play mode) */
-function userChoose(i){
-  stopHighlightSequence(); // stop any ongoing highlight
-  if(currentMode === 'train'){ showTrainingAnswerAndAutoNext(); return; }
+/* Handle choice (Play mode): auto-advance on correct */
+function handleChoice(i){
+  stopHighlighting();
+  if(currentMode === 'train'){ revealTrainingThenAdvance(); return; }
   const correct = (i === currentExperiment.answer);
-  const feedback = $('feedback');
-  // mark chosen letter temporarily
+  const fb = $('feedback');
   const btn = document.querySelector('.opt-btn[data-index="' + i + '"]');
-  const letterEl = btn && btn.querySelector('.opt-letter');
-  if(!btn){ return; }
+  const letterEl = btn ? btn.querySelector('.opt-letter') : null;
+
   if(correct){
-    // mark correct visually
-    if(letterEl){ letterEl.classList.add('correct'); }
-    feedback.innerHTML = '<div class="correct">✅ Correct!</div>';
-    speak('Correct! ' + (currentExperiment.explanation || 'Good job.'));
+    if(letterEl) { letterEl.classList.add('correct'); }
+    fb.innerHTML = `<div class="correct">✅ Correct! ${escapeHtml(currentExperiment.explanation || '')}</div>`;
+    speak('Correct. ' + (currentExperiment.explanation || 'Good job.'));
     awardPoints();
-    // auto-advance quickly (short delay so they see the feedback)
+    // auto-advance after short delay
     setTimeout(()=> {
-      // clear correct badge
-      if(letterEl){ letterEl.classList.remove('correct'); }
+      if(letterEl) letterEl.classList.remove('correct');
       nextExperiment();
     }, 700);
   } else {
-    // wrong: briefly show wrong color
-    if(letterEl){ letterEl.classList.add('wrong'); }
-    feedback.innerHTML = '<div class="wrong">❌ Wrong — try again.</div>';
+    if(letterEl) { letterEl.classList.add('wrong'); }
+    fb.innerHTML = `<div class="wrong">❌ Wrong. Try again.</div>`;
     speak('Wrong. Try again.');
-    // remove wrong highlight after short time so they can try again
     setTimeout(()=> { if(letterEl) letterEl.classList.remove('wrong'); }, 700);
   }
 }
 
-/* For explicit choice handler for older kids */
-function handleChoice(i){
-  // this function kept for compatibility (older code paths)
-  userChoose(i);
-}
-
-/* Award points (only once per experiment) */
-function awardPoints(){
-  const key = 'exp_' + currentIndex;
-  if(progress.solved && progress.solved[key]) return;
-  const pts = (currentExperiment.tries === 1) ? 10 : 4; // tries tracked but not necessary here
-  progress.points = (progress.points || 0) + pts;
-  progress.stars = (progress.stars || 0) + 1;
-  progress.solved[key] = Date.now();
-  saveProgress();
-}
-
-/* Next experiment */
-function nextExperiment(){
-  // move to next question
-  currentIndex++;
-  showExperiment();
-}
-
-/* Training: reveal answer and auto next */
-function showTrainingAnswerAndAutoNext(){
-  // highlight correct option, speak explanation, then advance
+/* Training reveal + auto-advance */
+function revealTrainingThenAdvance(){
+  if(!currentExperiment) return;
   const correct = currentExperiment.answer;
   const btn = document.querySelector('.opt-btn[data-index="' + correct + '"]');
-  const letterEl = btn && btn.querySelector('.opt-letter');
-  if(letterEl){ letterEl.classList.add('correct'); }
-  $('feedback').innerHTML = '<div class="correct">Answer: ' + (currentExperiment.options[correct]) + '. ' + (currentExperiment.explanation || '') + '</div>';
-  speak('Answer: ' + (currentExperiment.options[correct]) + '. ' + (currentExperiment.explanation || ''));
-  // advance after short delay
+  const letterEl = btn ? btn.querySelector('.opt-letter') : null;
+  if(letterEl) letterEl.classList.add('correct');
+  $('feedback').innerHTML = `<div class="correct">Answer: ${(currentExperiment.options && currentExperiment.options[correct]) || ''}. ${escapeHtml(currentExperiment.explanation || '')}</div>`;
+  speak('Answer: ' + ((currentExperiment.options && (currentExperiment.options[correct])) || '') + '. ' + (currentExperiment.explanation || ''));
+  awardPoints(); // optional — training might give points; you can remove if undesired
   setTimeout(()=> {
     if(letterEl) letterEl.classList.remove('correct');
     nextExperiment();
   }, 1200);
 }
 
-/* For training mode triggered at showExperiment stage */
-function revealTrainingAnswerAndAdvance(){
-  // If user has already selected something, don't auto-reveal
-  if(!currentExperiment) return;
-  showTrainingAnswerAndAutoNext();
+/* Award points once */
+function awardPoints(){
+  const key = 'exp_' + currentIndex;
+  if(progress.solved && progress.solved[key]) return;
+  // quick heuristic: first try 10 else 4 (tries not tracked here for simplicity)
+  const pts = 10;
+  progress.points = (progress.points || 0) + pts;
+  progress.stars = (progress.stars || 0) + 1;
+  progress.solved[key] = Date.now();
+  saveProgress();
 }
 
-/* hint and repeat */
+/* Next */
+function nextExperiment(){
+  currentIndex++;
+  showExperiment();
+}
+
+/* Hint & repeat */
 function showHint(){
   if(!currentExperiment) return;
-  $('feedback').innerHTML = '<div class="hint">Hint: ' + (currentExperiment.hint || '') + '</div>';
+  $('feedback').innerHTML = `<div class="hint">Hint: ${escapeHtml(currentExperiment.hint || '')}</div>`;
   speak('Hint: ' + (currentExperiment.hint || ''));
 }
 function repeatVoice(){
   if(!currentExperiment) return;
-  // For preschool, re-run highlight sequence; for others speak prompt
   if(currentAge === '5-8'){
     startHighlightSequence();
   } else {
@@ -590,16 +555,16 @@ function restartLevel(){
   showExperiment();
 }
 
-/* Certificate (printable) */
+/* Printable certificate */
 function openPrintableCertificate(){
   if(!currentAge) return alert('Please choose an age group first.');
-  const name = prompt('Enter name for the certificate:', localStorage.getItem(storagePrefix + 'player_name') || '');
+  const name = prompt('Enter name for the certificate:', localStorage.getItem('scigame_player_name') || '');
   if(!name) return;
-  localStorage.setItem(storagePrefix + 'player_name', name);
+  localStorage.setItem('scigame_player_name', name);
   const solved = Object.keys(progress.solved || {}).length;
   const total = (EXPERIMENTS[currentAge] || []).length;
   const points = progress.points || 0;
-  const badge = (progress.stars >= 60) ? 'Gold' : (progress.stars >= 30) ? 'Silver' : (progress.stars >= 10) ? 'Bronze' : 'None';
+  const badge = (progress.stars >= 60) ? 'Gold' : (progress.stars >= 30 ? 'Silver' : (progress.stars >= 10 ? 'Bronze' : 'None'));
   const html = `
     <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificate</title>
     <style>body{font-family:serif;padding:28px;text-align:center}.title{font-family:cursive;font-size:56px}.small{font-size:16px;color:#333}</style>
@@ -611,19 +576,19 @@ function openPrintableCertificate(){
       <div style="margin-top:18px" class="small">has completed <strong>${solved}</strong> out of <strong>${total}</strong> experiments in Age <strong>${currentAge}</strong>, scoring <strong>${points}</strong> points.</div>
       <div style="margin-top:24px" class="small">Badge: ${escapeHtml(badge)}</div>
       <div style="position:fixed;bottom:18px;width:100%;text-align:center;font-size:12px;color:#444">Created &amp; Designed by Animesh</div>
-      <script>setTimeout(()=>{ if(confirm('Open print dialog? Use Save as PDF to store certificate.')) window.print(); },300);</script>
+      <script>setTimeout(()=>{ if(confirm('Open print dialog? Use Save as PDF to store certificate.')) window.print(); },350);</script>
     </body></html>`;
   const w = window.open('', '_blank');
   if(!w) return alert('Popup blocked — allow popups for this site to open certificate.');
   w.document.open(); w.document.write(html); w.document.close();
 }
 
-/* small helper */
+/* Escape helper */
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 /* Init */
-document.addEventListener('DOMContentLoaded', function(){
-  // nothing heavy on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Wait for user selection
 });
 </script>
 </body>
