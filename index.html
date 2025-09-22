@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Science Experiments Game — All-in-One</title>
+  <title>Science Experiments Game — All-in-One (Fixed)</title>
   <style>
-    /* ---------- Basic UI ---------- */
     :root{
       --bg:#f6fbff; --card:#ffffff; --accent:#1766a0; --muted:#666;
       --success:#178a3b; --danger:#c92a2a;
@@ -17,8 +16,9 @@
     header p{margin:6px 0;color:var(--muted)}
     .wrap{max-width:1100px;margin:22px auto;padding:12px}
     .tiles{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:18px 0}
-    .tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 28px;background:var(--card);border-radius:12px;box-shadow:0 8px 18px rgba(10,20,40,0.06);text-decoration:none;color:inherit;font-weight:700;min-width:180px;cursor:pointer}
+    .tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 28px;background:var(--card);border-radius:12px;box-shadow:0 8px 18px rgba(10,20,40,0.06);text-decoration:none;color:inherit;font-weight:700;min-width:180px;cursor:pointer;outline:none}
     .tile small{font-weight:500;color:var(--muted);font-size:13px;margin-top:6px}
+    .tile:focus{box-shadow:0 0 0 4px rgba(23,102,160,0.12)}
     .hub{display:flex;gap:18px;align-items:flex-start}
     .left, .right{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 18px rgba(10,20,40,0.04)}
     .left{flex:1}
@@ -26,13 +26,12 @@
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
     button{cursor:pointer;border:1px solid rgba(10,20,40,0.08);background:white;padding:8px 12px;border-radius:8px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px}
-    .card{padding:10px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:8px}
-    .card .exp-title{font-weight:600}
+    .card{padding:10px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(#fff,#fbfdff);border:1px solid rgba(10,20,40,0.03)}
+    .card button{cursor:pointer}
     .small{font-size:13px;color:var(--muted)}
     footer{padding:18px;text-align:center;color:var(--muted);font-size:12px}
     .footer-credit{font-size:11px;color:#666;margin-top:12px;text-align:center}
 
-    /* ---------- Modal / Experiment ---------- */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:60}
     .modal.hidden{display:none}
     .modal-card{background:white;border-radius:12px;padding:16px;max-width:920px;width:94%;max-height:88vh;overflow:auto;box-shadow:0 20px 40px rgba(2,8,23,0.35)}
@@ -40,41 +39,31 @@
     .close-btn{background:transparent;border:none;font-size:20px;cursor:pointer}
     .question{margin-top:12px;font-size:18px}
     .options{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-    .opt-btn{padding:10px 12px;border-radius:10px;border:1px solid #e3eef9;background:linear-gradient(#fff,#f7fbff);min-width:110px}
+    .opt-btn{padding:10px 12px;border-radius:10px;border:1px solid #e3eef9;background:linear-gradient(#fff,#f7fbff);min-width:110px;cursor:pointer}
     .opt-btn:focus{outline:2px solid #cfe9ff}
     #feedback{margin-top:12px;min-height:28px;font-weight:600}
     .correct{color:var(--success)}
     .wrong{color:var(--danger)}
     .hint{color:#6b4b00;background:#fff7cc;padding:8px;border-radius:8px}
 
-    /* ---------- Animated pipe (example) ---------- */
     .pipe-wrap{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px}
-    .pipe{
-      width:220px;height:80px;border-radius:14px;background:linear-gradient(#cfe9ff,#e7f5ff);
-      position:relative;overflow:hidden;border:4px solid #b6e0ff;box-shadow:inset 0 6px 14px rgba(0,0,0,0.06)
-    }
+    .pipe{width:220px;height:80px;border-radius:14px;background:linear-gradient(#cfe9ff,#e7f5ff);position:relative;overflow:hidden;border:4px solid #b6e0ff;box-shadow:inset 0 6px 14px rgba(0,0,0,0.06)}
     .water{position:absolute;left:0;bottom:0;height:0%;width:100%;background:linear-gradient(#98d8ff,#66c7ff);transition:height 1.6s ease}
     .block{position:absolute;left:40%;top:18px;width:28px;height:44px;background:#c44;border-radius:6px;transform:skewX(-8deg)}
-    .flowing{animation:flow 1.25s linear infinite}
-    @keyframes flow{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
 
-    /* ---------- stars / badges ---------- */
     .status{padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #e3f2ff;margin-bottom:10px}
     .stars{font-weight:700;color:#f5b400}
-
-    /* ---------- certificate preview ---------- */
     .cert-preview{border:1px dashed #ddd;padding:12px;border-radius:8px;background:#fff}
 
-    /* ---------- responsive ---------- */
     @media (max-width:800px){
       .hub{flex-direction:column}
       .right{width:auto}
     }
-
   </style>
-  <!-- html2canvas and jsPDF for PDF export (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="" crossorigin="anonymous" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="" crossorigin="anonymous" defer></script>
+
+  <!-- PDF helper libraries loaded via CDN (defer so they don't block parsing) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" defer></script>
 </head>
 <body>
   <header>
@@ -83,13 +72,13 @@
   </header>
 
   <div class="wrap">
-    <div class="tiles" id="age-tiles">
-      <div class="tile" data-age="5-8"><div>Age 5–8</div><small>Beginner experiments</small></div>
-      <div class="tile" data-age="8-14"><div>Age 8–14</div><small>Applied &amp; curious</small></div>
-      <div class="tile" data-age="14+"><div>Age 14+</div><small>Concept &amp; reasoning</small></div>
+    <div class="tiles" id="age-tiles" aria-label="Age groups">
+      <div class="tile" data-age="5-8" tabindex="0" role="button" aria-pressed="false"><div>Age 5–8</div><small>Beginner experiments</small></div>
+      <div class="tile" data-age="8-14" tabindex="0" role="button" aria-pressed="false"><div>Age 8–14</div><small>Applied &amp; curious</small></div>
+      <div class="tile" data-age="14+" tabindex="0" role="button" aria-pressed="false"><div>Age 14+</div><small>Concept &amp; reasoning</small></div>
     </div>
 
-    <div id="hub" class="hub" style="display:none">
+    <div id="hub" class="hub" style="display:none" aria-live="polite">
       <div class="left">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div>
@@ -98,7 +87,7 @@
           </div>
           <div>
             <div class="controls">
-              <button id="play-mode-btn">Play Mode</button>
+              <button id="play-mode-btn" aria-pressed="true">Play Mode</button>
               <button id="train-mode-btn">Training Mode</button>
               <button id="reset-btn">Reset Progress</button>
             </div>
@@ -113,7 +102,6 @@
         </div>
 
         <div id="experiments-grid" class="grid" aria-live="polite"></div>
-
       </div>
 
       <aside class="right">
@@ -150,7 +138,7 @@
     Created &amp; Designed by Animesh
   </footer>
 
-  <!-- Modal for experiments -->
+  <!-- Modal -->
   <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-card" role="document">
       <div class="modal-header">
@@ -163,9 +151,7 @@
         </div>
       </div>
 
-      <div id="modal-body">
-        <!-- question + visuals injected here -->
-      </div>
+      <div id="modal-body"></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
         <button id="repeat-voice">🔁 Repeat</button>
@@ -177,8 +163,7 @@
 
 <script>
 /* -------------------------
-  Embedded experiments data
-  (20 items per group) — taken from your approved spec
+  Embedded experiments data (unchanged)
 ------------------------- */
 const EXPERIMENTS = {
   "5-8": [
@@ -242,53 +227,22 @@ const EXPERIMENTS = {
 };
 
 /* -------------------------
-  App logic: UI, voice, storage
+  Robust App initialization and handlers
 ------------------------- */
-const App = (function(){
+(function(){
   const storageKeyPrefix = 'scigame_v1_';
   let age = null;
-  let mode = 'play'; // 'play' or 'train'
-  let progress = {};
-  let current = { idx:null, tries:0, usedHint:false, answered:false };
+  let mode = 'play';
+  let progress = {points:0,stars:0,solved:{}};
+  let current = {idx:null,tries:0,usedHint:false,answered:false};
+  let controlsAttached = false;
 
-  // DOM refs
-  const tiles = document.getElementById('age-tiles');
-  const hub = document.getElementById('hub');
-  const hubTitle = document.getElementById('hub-title');
-  const grid = document.getElementById('experiments-grid');
-  const progressDisplay = document.getElementById('progress-display');
-  const ptsEl = document.getElementById('pts');
-  const starsEl = document.getElementById('stars');
-  const badgesEl = document.getElementById('badges');
-  const certNameEl = document.getElementById('cert-name');
-  const certScoreEl = document.getElementById('cert-score');
+  // DOM references will be set in init (ensures they exist)
+  let tilesEl, hubEl, hubTitle, gridEl, progressDisplay, ptsEl, starsEl, badgesEl;
+  let certNameEl, certScoreEl, modalEl, modalBody, modalTitle, modalSub;
+  let closeModalBtn, repeatVoiceBtn, hintBtn, nextBtn, playBtn, trainBtn, resetBtn, certBtn;
 
-  // modal
-  const modal = document.getElementById('modal');
-  const modalBody = document.getElementById('modal-body');
-  const modalTitle = document.getElementById('modal-title');
-  const modalSub = document.getElementById('modal-sub');
-  const closeModalBtn = document.getElementById('close-modal');
-  const repeatVoiceBtn = document.getElementById('repeat-voice');
-  const hintBtn = document.getElementById('hint-btn');
-  const nextBtn = document.getElementById('next-btn');
-
-  // scoring rules
-  const SCORING = { firstTry:10, hint:7, later:4 };
-
-  function speak(text){
-    if(!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
-    } catch(e) { console.warn('speak error', e) }
-  }
-
-  function storageKeyFor(ageGroup){
-    return storageKeyPrefix + 'progress_' + ageGroup;
-  }
+  function log(...args){ console.log('[SCI-GAME]', ...args) }
 
   function ensureProgress(){
     const key = storageKeyFor(age);
@@ -299,6 +253,7 @@ const App = (function(){
       localStorage.setItem(key, JSON.stringify(progress));
     }
   }
+  function storageKeyFor(a){ return storageKeyPrefix + 'progress_' + a }
 
   function saveProgress(){
     localStorage.setItem(storageKeyFor(age), JSON.stringify(progress));
@@ -306,12 +261,11 @@ const App = (function(){
   }
 
   function updateUIProgress(){
-    const total = EXPERIMENTS[age].length;
+    const total = (EXPERIMENTS[age]||[]).length;
     const solvedCount = Object.keys(progress.solved||{}).length;
     progressDisplay.textContent = `Solved ${solvedCount} / ${total}`;
     ptsEl.textContent = progress.points || 0;
     starsEl.textContent = progress.stars || 0;
-    // badges
     let badge = 'No badge yet';
     if((progress.stars||0) >= 60) badge = 'Gold';
     else if((progress.stars||0) >= 30) badge = 'Silver';
@@ -321,23 +275,27 @@ const App = (function(){
     certScoreEl.textContent = `${progress.points||0} pts`;
   }
 
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    } catch(e){ console.warn('speech error', e) }
+  }
+
   function renderGrid(){
-    grid.innerHTML = '';
+    gridEl.innerHTML = '';
     const list = EXPERIMENTS[age] || [];
     list.forEach((exp, idx) => {
       const card = document.createElement('div'); card.className='card';
-      card.innerHTML = `<div class="exp-title">Experiment ${idx+1}</div>
-                        <div class="small">${exp.prompt}</div>
+      const solvedKey = 'exp_' + idx;
+      const isSolved = !!(progress.solved && progress.solved[solvedKey]);
+      card.innerHTML = `<div class="exp-title">Experiment ${idx+1} ${isSolved? '✅' : ''}</div>
+                        <div class="small" title="${escapeHtml(exp.prompt)}">${exp.prompt}</div>
                         <div style="margin-top:8px"><button data-idx="${idx}">Start</button></div>`;
-      grid.appendChild(card);
-    });
-
-    // attach listeners to Start buttons
-    grid.querySelectorAll('button[data-idx]').forEach(b=>{
-      b.addEventListener('click', (e)=>{
-        const idx = parseInt(e.currentTarget.getAttribute('data-idx'),10);
-        openExperiment(idx);
-      });
+      gridEl.appendChild(card);
     });
   }
 
@@ -346,36 +304,31 @@ const App = (function(){
     const exp = EXPERIMENTS[age][idx];
     modalTitle.textContent = `Experiment ${idx+1}`;
     modalSub.textContent = (mode === 'train') ? 'Training mode — answer shown & explained' : 'Play mode';
-    modalBody.innerHTML = ''; nextBtn.style.display='none'; // reset
+    modalBody.innerHTML = ''; nextBtn.style.display = 'none';
 
-    // Question text
     const qDiv = document.createElement('div'); qDiv.className='question';
     qDiv.innerHTML = `<strong>${escapeHtml(exp.prompt)}</strong>`;
     modalBody.appendChild(qDiv);
 
-    // If this is the pipe experiment (detect certain prompt), show animated pipe SVG
+    // optional animated pipe for pipe prompts
     if(/pipe/i.test(exp.prompt)){
       const pipeWrap = document.createElement('div'); pipeWrap.className='pipe-wrap';
       pipeWrap.innerHTML = `
         <div class="pipe" aria-hidden="true">
           <div class="water" id="water-level" style="height:20%"></div>
           <div class="block" id="block"></div>
-        </div>
-      `;
+        </div>`;
       modalBody.appendChild(pipeWrap);
-      // in training, show which side opens by animating water
-      if(mode === 'train'){
-        document.getElementById('water-level').style.height = '70%';
-        document.getElementById('block').style.left = exp.answer === 0 ? '70%' : '30%';
-      } else {
-        // reset small
-        document.getElementById('water-level').style.height = '20%';
-        document.getElementById('block').style.left = '40%';
-      }
+      // training shows final state, play reset small height
+      setTimeout(()=> {
+        const w = document.getElementById('water-level'), b = document.getElementById('block');
+        if(w) w.style.height = (mode === 'train') ? '75%' : '20%';
+        if(b) b.style.left = (mode === 'train') ? (exp.answer===0 ? '70%' : '30%') : '40%';
+      }, 60);
     }
 
     // options
-    const opts = document.createElement('div'); opts.className = 'options';
+    const opts = document.createElement('div'); opts.className='options';
     exp.options.forEach((opt, i)=>{
       const b = document.createElement('button'); b.className='opt-btn';
       b.textContent = opt; b.setAttribute('data-i', i);
@@ -384,30 +337,27 @@ const App = (function(){
     });
     modalBody.appendChild(opts);
 
-    // feedback area
-    const fb = document.createElement('div'); fb.id='feedback'; modalBody.appendChild(fb);
+    const fb = document.createElement('div'); fb.id = 'feedback'; modalBody.appendChild(fb);
 
-    // If training, highlight correct option and show explanation & voice
+    // training mode shows answer & explanation
     if(mode === 'train'){
-      const corrIndex = exp.answer;
-      // highlight by styling
-      const btns = opts.querySelectorAll('.opt-btn');
-      btns.forEach((bb,ii)=>{
-        if(ii === corrIndex) bb.style.border = '2px solid #8ee08e';
-      });
-      fb.innerHTML = `<div class="correct">Answer: ${escapeHtml(exp.options[corrIndex])}. ${escapeHtml(exp.explanation)}</div>`;
-      speak(exp.voice || exp.prompt + '. Answer: ' + exp.options[corrIndex] + '. ' + exp.explanation);
+      const corr = exp.answer;
+      // highlight
+      Array.from(opts.children).forEach((btn,ii)=>{ if(ii===corr) btn.style.border = '2px solid #8ee08e'; });
+      fb.innerHTML = `<div class="correct">Answer: ${escapeHtml(exp.options[corr])}. ${escapeHtml(exp.explanation)}</div>`;
+      speak((exp.voice || exp.prompt) + '. Answer: ' + exp.options[corr] + '. ' + exp.explanation);
       nextBtn.style.display = 'inline-block';
     } else {
-      // play mode — speak the question
       speak(exp.voice || exp.prompt);
     }
 
-    modal.classList.remove('hidden');
+    modalEl.classList.remove('hidden');
   }
 
   function closeModal(){
-    modal.classList.add('hidden'); modalBody.innerHTML=''; window.speechSynthesis.cancel();
+    modalEl.classList.add('hidden');
+    modalBody.innerHTML = '';
+    window.speechSynthesis && window.speechSynthesis.cancel();
   }
 
   function chooseOption(i){
@@ -420,10 +370,11 @@ const App = (function(){
       fb.innerHTML = `<div class="correct">✅ Correct! ${escapeHtml(exp.explanation || '')}</div>`;
       speak('Correct! Well done.');
       awardPoints();
-      // small animation for pipe if present
       const water = document.getElementById('water-level');
       if(water) water.style.height = '86%';
       nextBtn.style.display = 'inline-block';
+      // update grid to show solved mark
+      renderGrid();
     } else {
       fb.innerHTML = `<div class="wrong">❌ Wrong. Try again.</div>`;
       speak('Wrong. Try again.');
@@ -443,19 +394,6 @@ const App = (function(){
     saveProgress();
   }
 
-  // controls
-  function setMode(m){
-    mode = m;
-    document.getElementById('play-mode-btn').style.fontWeight = m==='play' ? '800' : '400';
-    document.getElementById('train-mode-btn').style.fontWeight = m==='train' ? '800' : '400';
-  }
-
-  function resetProgressConfirm(){
-    if(!confirm('Reset progress for this age group?')) return;
-    progress = { points:0, stars:0, solved:{} };
-    saveProgress();
-  }
-
   // hint & repeat
   function showHint(){
     if(current.idx === null) return;
@@ -472,25 +410,22 @@ const App = (function(){
     speak(exp.voice || exp.prompt);
   }
 
-  // next experiment button (go to next index in same age)
   function goNext(){
-    const nextIdx = current.idx + 1;
-    if(nextIdx < EXPERIMENTS[age].length) openExperiment(nextIdx);
-    else { closeModal(); alert('End of set. You can generate a certificate!'); }
+    const next = current.idx + 1;
+    if(next < (EXPERIMENTS[age] || []).length) openExperiment(next);
+    else { closeModal(); alert('End of this experiment set — well done! Generate your certificate when ready.'); }
   }
 
-  // certificate generation (one-click PDF)
   async function generateCertificate(){
-    // ask for name
     const name = prompt('Enter the name for the certificate (as you want it printed):', localStorage.getItem(storageKeyPrefix + 'player_name') || '');
     if(!name) return;
     localStorage.setItem(storageKeyPrefix + 'player_name', name);
-    // prepare certificate element
     const solved = Object.keys(progress.solved || {}).length;
-    const total = EXPERIMENTS[age].length;
+    const total = (EXPERIMENTS[age]||[]).length;
     const points = progress.points || 0;
-    const badge = badgesEl.textContent;
+    const badge = (document.getElementById('badges') || {textContent:'No badge yet'}).textContent;
 
+    // build a certificate element
     const certEl = document.createElement('div');
     certEl.style.width = '1122px';
     certEl.style.height = '793px';
@@ -506,15 +441,14 @@ const App = (function(){
       <div style="margin-top:48px;text-align:center;font-size:16px">This certifies that</div>
       <div style="margin-top:12px;text-align:center;font-size:36px;font-weight:700">${escapeHtml(name)}</div>
       <div style="margin-top:18px;text-align:center;font-size:16px">has completed <strong>${solved}</strong> out of <strong>${total}</strong> experiments in the Age <strong>${age}</strong> section, scoring <strong>${points}</strong> points.</div>
-      <div style="margin-top:36px;text-align:center;font-size:14px">Badge: ${badge}</div>
+      <div style="margin-top:36px;text-align:center;font-size:14px">Badge: ${escapeHtml(badge)}</div>
       <div style="position:absolute;bottom:28px;width:100%;text-align:center;font-size:11px;color:#444">Created &amp; Designed by Animesh</div>
     `;
-    // append off-DOM for render
     document.body.appendChild(certEl);
 
-    // wait for html2canvas loaded
-    if(!window.html2canvas || !window.jspdf){
-      alert('PDF libraries are loading. Please try again in a moment (browser will have loaded the helper scripts).');
+    // ensure html2canvas and jspdf are available
+    if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+      alert('PDF libraries are still loading. Please wait a moment and try Generate Certificate again.');
       certEl.remove();
       return;
     }
@@ -528,56 +462,126 @@ const App = (function(){
       const filename = `certificate_${name.replace(/\s+/g,'_')}_${age}.pdf`;
       pdf.save(filename);
     } catch(err){
-      console.error(err);
-      alert('Failed to generate PDF: ' + err.message);
+      console.error('PDF generation error', err);
+      alert('Failed to generate PDF: ' + (err && err.message ? err.message : err));
     } finally {
       certEl.remove();
     }
   }
 
-  // set up listeners for hub controls
-  function attachHubControls(){
-    document.getElementById('play-mode-btn').addEventListener('click', ()=> setMode('play'));
-    document.getElementById('train-mode-btn').addEventListener('click', ()=> setMode('train'));
-    document.getElementById('reset-btn').addEventListener('click', resetProgressConfirm);
-    document.getElementById('certificate-btn').addEventListener('click', generateCertificate);
+  // attach hub controls once
+  function attachControlsOnce(){
+    if(controlsAttached) return;
+    playBtn.addEventListener('click', ()=> setMode('play'));
+    trainBtn.addEventListener('click', ()=> setMode('train'));
+    resetBtn.addEventListener('click', ()=> {
+      if(!confirm('Reset progress for this age group?')) return;
+      progress = {points:0,stars:0,solved:{}};
+      saveProgress();
+      renderGrid();
+    });
+    certBtn.addEventListener('click', generateCertificate);
     closeModalBtn.addEventListener('click', closeModal);
     repeatVoiceBtn.addEventListener('click', repeatVoice);
     hintBtn.addEventListener('click', showHint);
     nextBtn.addEventListener('click', goNext);
-    // keyboard: Esc to close
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape') closeModal();
-      if(e.key === 'Enter' && !modal.classList.contains('hidden') && nextBtn.style.display !== 'none') goNext();
+    controlsAttached = true;
+  }
+
+  function setMode(m){
+    mode = m === 'train' ? 'train' : 'play';
+    playBtn.style.fontWeight = mode==='play' ? '800' : '400';
+    trainBtn.style.fontWeight = mode==='train' ? '800' : '400';
+  }
+
+  // event delegation for tiles and grid buttons
+  function attachTileAndGridHandlers(){
+    // tiles: delegation + keyboard support
+    tilesEl.addEventListener('click', (ev)=>{
+      const tile = ev.target.closest('.tile');
+      if(!tile) return;
+      const selected = tile.getAttribute('data-age');
+      selectAge(selected, tile);
+    });
+    tilesEl.addEventListener('keydown', (ev)=>{
+      const tile = ev.target.closest('.tile');
+      if(!tile) return;
+      if(ev.key === 'Enter' || ev.key === ' '){
+        ev.preventDefault();
+        selectAge(tile.getAttribute('data-age'), tile);
+      }
+    });
+
+    // grid delegation: start experiment by pressing start button inside a card
+    gridEl.addEventListener('click', (ev)=>{
+      const btn = ev.target.closest('button[data-idx]');
+      if(!btn) return;
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      if(Number.isFinite(idx)) openExperiment(idx);
     });
   }
 
-  /* public init */
-  function init(){
-    // tile clicks to choose age
-    tiles.querySelectorAll('.tile').forEach(t=>{
-      t.addEventListener('click', ()=>{
-        age = t.getAttribute('data-age');
-        hub.style.display = 'flex';
-        hubTitle.textContent = 'Age ' + age;
-        ensureProgress();
-        renderGrid();
-        updateUIProgress();
-        setMode('play');
-        attachHubControls();
-        // show preview name if any
-        document.getElementById('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
-      });
-    });
+  function selectAge(selectedAge, tileEl){
+    if(!EXPERIMENTS[selectedAge]) {
+      alert('No experiments for ' + selectedAge);
+      return;
+    }
+    age = selectedAge;
+    hubEl.style.display = 'flex';
+    hubTitle.textContent = 'Age ' + age;
+    ensureProgress();
+    renderGrid();
+    updateUIProgress();
+    setMode('play');
+    attachControlsOnce();
+    // update preview name
+    document.getElementById('cert-name').textContent = localStorage.getItem(storageKeyPrefix + 'player_name') || '—';
+    // visually mark the selected tile
+    tilesEl.querySelectorAll('.tile').forEach(t=> t.setAttribute('aria-pressed','false'));
+    if(tileEl) tileEl.setAttribute('aria-pressed','true');
+    log('Selected age group:', age);
   }
 
-  /* helper */
-  function escapeHtml(s){ return (''+s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;', '\"':'&quot;', \"'\":\"&#39;\"}[c])) }
+  function escapeHtml(s){ return (''+s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;', '\"':'&quot;', \"'\":\"&#39;\"}[c] || c)); }
 
-  return { init };
+  // SCORING constant referencing
+  const SCORING = { firstTry:10, hint:7, later:4 };
+
+  // initialize after DOM ready (ensures all elements present)
+  document.addEventListener('DOMContentLoaded', ()=>{
+    tilesEl = document.getElementById('age-tiles');
+    hubEl = document.getElementById('hub');
+    hubTitle = document.getElementById('hub-title');
+    gridEl = document.getElementById('experiments-grid');
+    progressDisplay = document.getElementById('progress-display');
+    ptsEl = document.getElementById('pts');
+    starsEl = document.getElementById('stars');
+    badgesEl = document.getElementById('badges');
+    certNameEl = document.getElementById('cert-name');
+    certScoreEl = document.getElementById('cert-score');
+
+    modalEl = document.getElementById('modal');
+    modalBody = document.getElementById('modal-body');
+    modalTitle = document.getElementById('modal-title');
+    modalSub = document.getElementById('modal-sub');
+    closeModalBtn = document.getElementById('close-modal');
+    repeatVoiceBtn = document.getElementById('repeat-voice');
+    hintBtn = document.getElementById('hint-btn');
+    nextBtn = document.getElementById('next-btn');
+
+    playBtn = document.getElementById('play-mode-btn');
+    trainBtn = document.getElementById('train-mode-btn');
+    resetBtn = document.getElementById('reset-btn');
+    certBtn = document.getElementById('certificate-btn');
+
+    attachTileAndGridHandlers();
+    // If you want the first tile auto-selected uncomment next line:
+    // document.querySelector('.tile[data-age="5-8"]').click();
+
+    log('App initialized — waiting for user to pick an age group');
+  });
+
 })();
-
-document.addEventListener('DOMContentLoaded', ()=> App.init() );
 </script>
 </body>
 </html>
